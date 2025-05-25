@@ -155,19 +155,20 @@ void Game::drawScreen(){
         //Draws the back button
         buttonList[2]->draw(screenImg);
 
-        //Explains the instructions
-        int instructionFont = cv::FONT_HERSHEY_DUPLEX; // Changed font
-        double instructionFontScale = 0.8; // Slightly reduced scale for DUPLEX to fit well
-        int instructionThickness = 1;      // Adjusted thickness for DUPLEX
+        { // Start new scope block
+            //Explains the instructions
+            int instructionFont = cv::FONT_HERSHEY_DUPLEX; // Changed font
+            double instructionFontScale = 0.8; // Slightly reduced scale for DUPLEX to fit well
+            int instructionThickness = 1;      // Adjusted thickness for DUPLEX
 
-        putText(*screenImg, "Water and fertilise your tree so it grows", Point(WINDOW_WIDTH/2-300, 150), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "big and tall. Prune branches that you", Point(WINDOW_WIDTH/2-300, 200), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "want to remove and reverse your previous", Point(WINDOW_WIDTH/2-300, 250), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "actions if you make a mistake or don't", Point(WINDOW_WIDTH/2-300, 300), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "like how the tree has grown. You get 2L", Point(WINDOW_WIDTH/2-300, 350), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "water and 1kg fertiliser free every time", Point(WINDOW_WIDTH/2-300, 400), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "you let your tree grow. Press ESC to quit", Point(WINDOW_WIDTH/2-300, 450), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-         
+            putText(*screenImg, "Water and fertilise your tree so it grows", Point(WINDOW_WIDTH/2-300, 150), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "big and tall. Prune branches that you", Point(WINDOW_WIDTH/2-300, 200), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "want to remove and reverse your previous", Point(WINDOW_WIDTH/2-300, 250), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "actions if you make a mistake or don't", Point(WINDOW_WIDTH/2-300, 300), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "like how the tree has grown. You get 2L", Point(WINDOW_WIDTH/2-300, 350), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "water and 1kg fertiliser free every time", Point(WINDOW_WIDTH/2-300, 400), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "you let your tree grow. Press ESC to quit", Point(WINDOW_WIDTH/2-300, 450), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+        } // End new scope block
         break;
     case PRUNING_ACTION:
         //Draws the cancel pruning button
