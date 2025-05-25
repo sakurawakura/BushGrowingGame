@@ -7,8 +7,8 @@ bool GrowingAction::performAction() {
     treeToModify->grow(waterConsumed, nutrientsConsumed, 
     branchWidthIncreases, branchLengthIncreases, newBranchIndices);
 
-    playerToModify->addFertiliser(1);
-    playerToModify->addWater(2);
+    playerToModify->addFertiliser(3); // Changed from 1 to 3
+    playerToModify->addWater(3);    // Changed from 2 to 3
 
     return true;
 };

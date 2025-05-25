@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "Printable.h"
+#include <iostream> // Required for std::ostream and std::istream
 
 using namespace std;
 
@@ -27,6 +28,10 @@ public:
     float getFertiliserSupply();
 
     void printData();
+
+    // Text-based save/load
+    void saveToStream(std::ostream& out) const;
+    static Player loadFromStream(std::istream& in);
 };
 
 #endif

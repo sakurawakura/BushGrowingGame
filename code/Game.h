@@ -11,13 +11,20 @@
 #include "FertilisingAction.h"
 #include "PruningAction.h"
 
+// Removed: Forward declaration for nlohmann::json
+// namespace nlohmann {
+//     class json;
+// }
+
 using namespace cv;
 
 enum GameState{
     MAIN_MENU,
     INSTRUCTION_MENU,
     IN_GAME,
-    PRUNING_ACTION
+    PRUNING_ACTION,
+    AWAITING_WATER_INPUT,
+    AWAITING_FERTILISER_INPUT
 };
 
 class Game : Printable{
@@ -26,7 +33,7 @@ class Game : Printable{
 
         ~Game();
 
-        void handleInputs();
+        void handleInputs(int keyPressed); // Modified to accept key presses
 
         void drawScreen();
 
@@ -37,7 +44,6 @@ class Game : Printable{
         static int mouseXPos;
         static int mouseYPos;
         static bool mouseClicked;
-
 
     private:
         Mat* screenImg;
@@ -53,6 +59,14 @@ class Game : Printable{
 
         GameState currentState;
 
+        Clickable* saveGameButton; // Save Game button
+        Clickable* loadGameButton; // Load Game button
+
+        std::string currentInputText; // For text input pop-up
+        int pendingActionType; // 0=None, 5=Water, 6=Fertiliser (matches button IDs)
+
+        void saveGame(); // Method to save the game state
+        void loadGame(); // Method to load the game state
 };
 
 

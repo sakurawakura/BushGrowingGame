@@ -6,7 +6,12 @@
 #include <iostream>
 #include "Branch.h"
 #include "Printable.h"
+// Removed: #include "include/nlohmann/json.hpp" // For JSON serialization
 
+// Removed: Forward declaration for nlohmann::json
+// namespace nlohmann {
+//     class json;
+// }
 
 using namespace std;
 
@@ -54,6 +59,11 @@ class Tree : public Printable{
         int getClickedIndex(int mouseX, int mouseY);
 
         void printData();
+
+        // Text-based save/load
+        void saveToStream(std::ostream& out) const;
+        static Tree* loadFromStream(std::istream& in, int windowWidth, int windowHeight);
+
     private:
         vector<Branch*> branchList;
 
