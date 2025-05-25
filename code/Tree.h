@@ -6,7 +6,12 @@
 #include <iostream>
 #include "Branch.h"
 #include "Printable.h"
+#include "include/nlohmann/json.hpp" // For JSON serialization
 
+// Forward declaration for nlohmann::json
+namespace nlohmann {
+    class json;
+}
 
 using namespace std;
 
@@ -54,6 +59,15 @@ class Tree : public Printable{
         int getClickedIndex(int mouseX, int mouseY);
 
         void printData();
+
+        // Serialization/Deserialization
+        nlohmann::json toJson() const;
+        // Note: fromJson for Tree is complex due to Branch* and potential trunk recreation.
+        // For now, we'll assume it reconstructs a new Tree object.
+        // The Game class will handle creating the initial trunk if needed for a new game vs. loading.
+        static Tree* fromJson(const nlohmann::json& j);
+
+
     private:
         vector<Branch*> branchList;
 

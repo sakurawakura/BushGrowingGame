@@ -135,7 +135,40 @@ void Branch::draw(Mat* img){
     }
 
     //Draws the branch to the image;
-    fillConvexPoly(*img, vertices, CV_RGB(148, 72, 21));
+    // Determine color based on age
+    // Base color: A medium brown (e.g., SaddleBrown)
+    float baseR = 139.0f;
+    float baseG = 69.0f;
+    float baseB = 19.0f;
+
+    // Darkening factor: older branches get darker.
+    // We'll scale the brightness based on age.
+    // Define a maximum age that influences color, to prevent branches from becoming too dark or black.
+    const int maxAgeForColorEffect = 50; // Branches older than this will have the darkest shade in this scheme.
+    
+    // Calculate an age factor, ranging from 0.0 (youngest) to 1.0 (oldest, up to maxAgeForColorEffect).
+    // Ensure maxAgeForColorEffect is not zero to prevent division by zero.
+    float ageFactor = 0.0f;
+    if (maxAgeForColorEffect > 0) {
+        ageFactor = static_cast<float>(std::min(this->age, maxAgeForColorEffect)) / static_cast<float>(maxAgeForColorEffect);
+    }
+
+    // Determine the brightness scale. Younger branches (ageFactor closer to 0) will be brighter.
+    // Older branches (ageFactor closer to 1) will be darker.
+    // Let's say brightness scales from 1.0 (original brightness) down to 0.5 (half brightness).
+    float brightnessScale = 1.0f - (ageFactor * 0.5f); 
+
+    // Calculate new color values by scaling the base color.
+    int r = static_cast<int>(baseR * brightnessScale);
+    int g = static_cast<int>(baseG * brightnessScale);
+    int b = static_cast<int>(baseB * brightnessScale);
+
+    // Ensure color components are within the valid range [0, 255].
+    r = std::max(0, std::min(255, r));
+    g = std::max(0, std::min(255, g));
+    b = std::max(0, std::min(255, b));
+
+    fillConvexPoly(*img, vertices, CV_RGB(r, g, b));
 
 
 }
@@ -187,4 +220,75 @@ void Branch::printData(){
         cout << "Rectangle's y position: " << branchRect.center.y << endl;
         cout << "Rectangle's angle position: " << branchRect.angle << endl;
         cout << "Number of times the branch has been allowed to grow: " << age << endl;
+}
+
+// Serialization to JSON
+nlohmann::json Branch::toJson() const {
+    nlohmann::json j;
+    j["index"] = this->index;
+    j["parentIndex"] = this->parentIndex;
+    j["childIndices"] = nlohmann::json::array(); // Ensures it's an array even if empty
+    for (int childIdx : this->childIndices) {
+        j["childIndices"].push_back(childIdx);
+    }
+    j["branchRect"] = {
+        {"center", {{"x", this->branchRect.center.x}, {"y", this->branchRect.center.y}}},
+        {"size", {{"width", this->branchRect.size.width}, {"height", this->branchRect.size.height}}},
+        {"angle", this->branchRect.angle}
+    };
+    j["age"] = this->age;
+    return j;
+}
+
+// Deserialization from JSON
+Branch Branch::fromJson(const nlohmann::json& j) {
+    // Note: This creates a Branch instance. The constructor logic for positioning based on initialX, initialY
+    // is slightly different from directly setting center. Here, we directly restore the saved state.
+    // The original constructor calculates center from a base position (initialXPos, initialYPos).
+    // Here, we assume the saved center is the correct absolute position.
+
+    Point2f center(j.at("branchRect").at("center").at("x").get<float>(),
+                   j.at("branchRect").at("center").at("y").get<float>());
+    Size2f size(j.at("branchRect").at("size").at("width").get<float>(),
+                j.at("branchRect").at("size").at("height").get<float>());
+    float angle = j.at("branchRect").at("angle").get<float>();
+
+    // Create a temporary Branch using its default constructor or a minimal one if available,
+    // then populate its fields. The default constructor might not be ideal if it sets things we override.
+    // Let's create a branch and then set its members.
+    // The Branch constructor Branch(int, int, float, float, float, float, float) calculates center.
+    // We don't want that calculation here; we want to restore the exact RotatedRect.
+
+    // We need a way to construct a Branch and then set its private members.
+    // The simplest is to use the existing constructor and then adjust, or add a specific constructor for this.
+    // Given the current structure, we'll use the main constructor with dummy initial pos, then overwrite branchRect.
+    // This isn't perfectly clean. A dedicated constructor or setters for all fields would be better.
+    
+    // For now, we'll construct a branch and then manually set its members.
+    // This requires making Branch::fromJson a friend or having setters for all members.
+    // Let's assume we can modify the Branch object directly for simplicity in this step.
+    // In a real scenario, one might add a constructor Branch(json) or make fromJson a friend.
+
+    // Create a branch using the constructor that most closely matches the data,
+    // or create one and then set its properties.
+    // The current constructor recalculates xPos and yPos.
+    // We will create a default branch and then set its members.
+    // This is tricky because members are private.
+    // A common pattern is a constructor that takes a JSON object, or fromJson returns a new Branch.
+
+    Branch branch; // Uses Branch() default constructor
+    branch.index = j.at("index").get<int>();
+    branch.parentIndex = j.at("parentIndex").get<int>();
+    
+    branch.childIndices.clear(); // Clear any default children
+    if (j.at("childIndices").is_array()) {
+        for (const auto& childIdx_json : j.at("childIndices")) {
+            branch.childIndices.push_back(childIdx_json.get<int>());
+        }
+    }
+
+    branch.branchRect = RotatedRect(center, size, angle);
+    branch.age = j.at("age").get<int>();
+    
+    return branch;
 }

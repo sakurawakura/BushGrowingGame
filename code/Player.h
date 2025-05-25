@@ -3,6 +3,11 @@
 
 #include "Printable.h"
 
+// Forward declaration for nlohmann::json
+namespace nlohmann {
+    class json;
+}
+
 using namespace std;
 
 class Player : Printable{
@@ -27,6 +32,10 @@ public:
     float getFertiliserSupply();
 
     void printData();
+
+    // Serialization/Deserialization
+    nlohmann::json toJson() const;
+    static Player fromJson(const nlohmann::json& j);
 };
 
 #endif

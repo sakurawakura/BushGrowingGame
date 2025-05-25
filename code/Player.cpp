@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "include/nlohmann/json.hpp" // For JSON serialization
 
 // Constructor to initialize water and fertilizer supplies
 Player::Player(float water, float fertiliser) : waterSupply(water), fertiliserSupply(fertiliser) {}
@@ -53,6 +54,21 @@ void Player::printData(){
     cout << "Player object" << endl;
     cout << "Fertiliser supplies: " << fertiliserSupply << endl;
     cout << "Water supplies: " << waterSupply << endl;
+}
+
+// Serialization to JSON
+nlohmann::json Player::toJson() const {
+    nlohmann::json j;
+    j["waterSupply"] = this->waterSupply;
+    j["fertiliserSupply"] = this->fertiliserSupply;
+    return j;
+}
+
+// Deserialization from JSON
+Player Player::fromJson(const nlohmann::json& j) {
+    float water = j.at("waterSupply").get<float>();
+    float fertiliser = j.at("fertiliserSupply").get<float>();
+    return Player(water, fertiliser);
 }
 
 

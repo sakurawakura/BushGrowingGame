@@ -336,3 +336,105 @@ void Tree::printData(){
     cout << "Max nutrients: " << maxNutrients << endl;
 
 }
+
+// Serialization to JSON
+nlohmann::json Tree::toJson() const {
+    nlohmann::json j;
+    j["waterLevel"] = this->waterLevel;
+    j["maxWater"] = this->maxWater;
+    j["nutrientLevel"] = this->nutrientLevel;
+    j["maxNutrients"] = this->maxNutrients;
+    j["maxIndex"] = this->maxIndex;
+
+    j["branchList"] = nlohmann::json::array();
+    for (const Branch* branch_ptr : this->branchList) {
+        if (branch_ptr) { // Ensure pointer is not null
+            j["branchList"].push_back(branch_ptr->toJson());
+        }
+    }
+    return j;
+}
+
+// Deserialization from JSON
+// The windowWidth and windowHeight parameters are not strictly needed here if branch positions are absolute.
+// However, the original Tree constructor takes a trunk, which is positioned using window dimensions.
+// For deserialization, we are reconstructing branches with their saved absolute positions.
+// If a new game starts, Game.cpp creates the trunk. If a game is loaded, this function is used.
+Tree* Tree::fromJson(const nlohmann::json& j) {
+    // Initial water and nutrients are part of the Tree's state, not just initial parameters for a new tree.
+    float water = j.at("waterLevel").get<float>();
+    float nutrients = j.at("nutrientLevel").get<float>();
+
+    // The concept of a 'trunk' as a special parameter to the constructor is for new tree creation.
+    // When deserializing, all branches, including what was originally the trunk, are in branchList.
+    // We need to ensure the branchList from JSON is correctly used.
+    // The Tree constructor `Tree(float, float, Branch*)` expects a trunk.
+    // We will first deserialize all branches, then pick the one with parentIndex -1 (or index 0 typically) as trunk.
+    // This is a bit complex given the current constructor.
+    
+    // Simpler approach for fromJson:
+    // Create a "default" or "empty" tree and then populate it.
+    // The Tree constructor requires a trunk. This is problematic for fromJson if we don't have a trunk yet.
+    // One way: create a dummy trunk, then replace/repopulate branchList. This is messy.
+
+    // Better: Modify Tree to allow construction without an initial trunk, or add a specific constructor.
+    // For now, let's assume we can construct a Tree and then set its members.
+    // We will directly create branches and add them. The Tree constructor that takes a trunk
+    // is not ideal here.
+    // Let's assume the first branch in the JSON's branchList can serve as the trunk for constructor,
+    // or that branchList is ordered such that the trunk is first.
+
+    std::vector<Branch*> tempBranchList;
+    const nlohmann::json& branches_json = j.at("branchList");
+    if (branches_json.is_array()) {
+        for (const auto& branch_j : branches_json) {
+            // Branch::fromJson returns a Branch object (by value). We need Branch* for branchList.
+            Branch b_val = Branch::fromJson(branch_j);
+            tempBranchList.push_back(new Branch(b_val)); // Create a new Branch on the heap
+        }
+    }
+
+    if (tempBranchList.empty()) {
+        // Cannot create a Tree without a trunk based on current constructor
+        // Or, if allowed, it would be an empty tree.
+        // For this game, a tree always has at least a trunk.
+        // Consider logging an error or throwing an exception.
+        std::cerr << "Error in Tree::fromJson: branchList is empty in JSON, cannot form a Tree." << std::endl;
+        return nullptr; 
+    }
+
+    // Assuming the first branch in the list is the trunk.
+    // This is an assumption that needs to be ensured during serialization or handled more robustly.
+    Branch* trunk = tempBranchList[0]; 
+
+    Tree* newTree = new Tree(water, nutrients, trunk); // Trunk is now owned by newTree
+
+    // Remove the trunk from tempBranchList as it's already added via constructor
+    // and Tree's constructor adds it to its own branchList.
+    // The current Tree constructor adds the passed trunk to its branchList. So, we need to be careful.
+    
+    // Clear the default branchList created by the Tree constructor (which just contains the trunk)
+    // and rebuild it from our deserialized list.
+    for(Branch* b : newTree->branchList) { // Delete the initial trunk added by constructor if it's not the one from JSON
+        if (b != trunk) delete b; // Avoid double delete if trunk was the same
+    }
+    newTree->branchList.clear(); 
+
+    // Add all deserialized branches (including the one we designated as trunk)
+    for (Branch* b_ptr : tempBranchList) {
+        newTree->branchList.push_back(b_ptr);
+    }
+    
+    // Restore other Tree properties
+    newTree->maxWater = j.at("maxWater").get<float>();
+    newTree->nutrientLevel = j.at("nutrientLevel").get<float>(); // Already set by constructor, but overwrite if different
+    newTree->maxNutrients = j.at("maxNutrients").get<float>();
+    newTree->maxIndex = j.at("maxIndex").get<int>();
+    
+    // Important: updateMaxConstraints might be needed if it's not implicitly handled by restoring values.
+    // The original updateMaxConstraints calculates based on totalArea of branches.
+    // Since we've restored branches and their sizes, this should be recalculated.
+    newTree->updateMaxConstraints(); // Recalculate maxWater/maxNutrients based on loaded branches.
+
+    return newTree;
+}
