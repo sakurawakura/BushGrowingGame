@@ -1,4 +1,9 @@
 #include "Tree.h"
+#include <string>    // For std::string
+#include <vector>    // For std::vector
+#include <limits>    // For std::numeric_limits
+#include <sstream>   // For std::istringstream
+#include <iostream>  // For std::cerr, std::endl
 
 //Maximum area of a branch before it will no longer sprout new branches
 const float NEW_BRANCH_THRESHOLD = 5000;
@@ -335,4 +340,119 @@ void Tree::printData(){
     cout << "Nutrient level: " << nutrientLevel << endl;
     cout << "Max nutrients: " << maxNutrients << endl;
 
+}
+
+void Tree::saveToStream(std::ostream& out) const {
+    out << "tree_max_index " << maxIndex << std::endl;
+    out << "tree_water_level " << waterLevel << std::endl;
+    out << "tree_nutrient_level " << nutrientLevel << std::endl;
+    out << "num_branches " << branchList.size() << std::endl;
+    for (const Branch* branch : branchList) {
+        if (branch) {
+            branch->saveToStream(out); // Each branch writes its own newline
+        }
+    }
+}
+
+Tree* Tree::loadFromStream(std::istream& in, int windowWidth, int windowHeight) {
+    std::string keyword;
+    int p_maxIndex = 0;
+    float p_waterLevel = 0.0f;
+    float p_nutrientLevel = 0.0f;
+    int p_num_branches = 0;
+
+    // Read tree properties
+    if (!(in >> keyword >> p_maxIndex) || keyword != "tree_max_index") { 
+        std::cerr << "Error: Failed to read tree_max_index or keyword mismatch." << std::endl;
+        return nullptr; 
+    }
+    if (!(in >> keyword >> p_waterLevel) || keyword != "tree_water_level") { 
+        std::cerr << "Error: Failed to read tree_water_level or keyword mismatch." << std::endl;
+        return nullptr; 
+    }
+    if (!(in >> keyword >> p_nutrientLevel) || keyword != "tree_nutrient_level") { 
+        std::cerr << "Error: Failed to read tree_nutrient_level or keyword mismatch." << std::endl;
+        return nullptr; 
+    }
+    if (!(in >> keyword >> p_num_branches) || keyword != "num_branches") { 
+        std::cerr << "Error: Failed to read num_branches or keyword mismatch." << std::endl;
+        return nullptr; 
+    }
+
+    // Consume the rest of the line after num_branches
+    std::string dummy_line;
+    std::getline(in, dummy_line); 
+
+    std::vector<Branch*> loadedBranches;
+    loadedBranches.reserve(p_num_branches);
+
+    for (int i = 0; i < p_num_branches; ++i) {
+        Branch loadedBranch = Branch::loadFromStream(in); // Assumes Branch::loadFromStream reads one line
+        if (in.fail() || loadedBranch.getIndex() == -1) { 
+            std::cerr << "Error loading branch " << i << " from stream." << std::endl;
+            for (Branch* b : loadedBranches) delete b; // Cleanup already loaded branches
+            return nullptr;
+        }
+        loadedBranches.push_back(new Branch(loadedBranch)); 
+    }
+
+    if (loadedBranches.empty() && p_num_branches > 0) {
+         std::cerr << "Error: No branches loaded despite num_branches (" << p_num_branches << ") > 0." << std::endl;
+         return nullptr;
+    }
+    
+    Tree* loadedTree = nullptr;
+    if (!loadedBranches.empty()) {
+        // The first branch in the file is assumed to be the trunk.
+        // The Tree constructor requires a trunk. It will also add this trunk to its own branchList.
+        Branch* trunk = new Branch(*loadedBranches[0]); // Create a copy for the constructor
+        
+        loadedTree = new Tree(p_waterLevel, p_nutrientLevel, trunk); // trunk is now owned by loadedTree
+
+        // The Tree constructor adds the trunk to its internal branchList.
+        // We need to replace this with our full list of loaded branches.
+        // First, clear the branchList that the constructor created (which contains only the trunk it copied).
+        for(Branch* b_in_constructor_list : loadedTree->branchList) {
+             // This is tricky: the trunk passed to constructor is now in branchList.
+             // If we delete it here, and then add it again from loadedBranches, we might have issues.
+             // The trunk passed to constructor IS the first element of loadedTree->branchList.
+             // We want to replace the entire branchList.
+        }
+        // Delete the single trunk branch that was added by the Tree constructor.
+        // The 'trunk' variable we created is a copy of loadedBranches[0].
+        // The Tree constructor takes this 'trunk' and its internal branchList[0] points to it.
+        delete loadedTree->branchList[0]; // Delete the trunk that the constructor put in its list
+        loadedTree->branchList.clear();   // Clear the list
+
+        // Now, transfer ownership of all loaded branches (including the original loadedBranches[0]) to the tree.
+        for (Branch* b_ptr : loadedBranches) {
+            loadedTree->branchList.push_back(b_ptr);
+        }
+        // loadedBranches vector itself will be destroyed, but the Branch objects are now owned by loadedTree.
+
+    } else { // p_num_branches was 0 or loading failed to get any branches
+         std::cout << "No branches in save file or failed to load branches. Creating default tree." << std::endl;
+         Branch* defaultTrunk = new Branch(0, -1, 0.0f, 50.0f, 10.0f,  windowWidth/ 2.0f, (float)windowHeight); 
+         loadedTree = new Tree(10.0f, 10.0f, defaultTrunk); // Default resources
+         // If p_waterLevel, p_nutrientLevel were 0 because file was minimal (e.g. just "num_branches 0"), use defaults.
+         // The initial values in the constructor above will be used if p_waterLevel/p_nutrientLevel were validly 0 from file.
+         // If the file indicated 0 branches, the p_waterLevel and p_nutrientLevel from file are respected.
+         if (p_num_branches == 0 && p_waterLevel == 0.0f && p_nutrientLevel == 0.0f) {
+             // If the file specifically had 0 for these, it's fine. If it was a minimal file,
+             // the constructor defaults are reasonable. The code above already uses p_waterLevel, p_nutrientLevel.
+             // This special block for 0,0,0 resources might be redundant if constructor uses defaults.
+             // The constructor Tree(10,10,defaultTrunk) already sets these.
+             // If values from file were 0,0,0 then loadedTree will have those.
+         }
+         // The loadedTree created with defaultTrunk already has water/nutrient levels (10,10).
+         // If the file specified 0 branches but had specific water/nutrient levels, those should be used.
+         loadedTree->waterLevel = p_waterLevel;
+         loadedTree->nutrientLevel = p_nutrientLevel;
+    }
+    
+    loadedTree->maxIndex = p_maxIndex;
+    loadedTree->updateMaxConstraints(); 
+    loadedTree->updateBranchPos(); 
+
+    return loadedTree;
 }

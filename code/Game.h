@@ -11,6 +11,11 @@
 #include "FertilisingAction.h"
 #include "PruningAction.h"
 
+// Removed: Forward declaration for nlohmann::json
+// namespace nlohmann {
+//     class json;
+// }
+
 using namespace cv;
 
 enum GameState{
@@ -38,7 +43,6 @@ class Game : Printable{
         static int mouseYPos;
         static bool mouseClicked;
 
-
     private:
         Mat* screenImg;
 
@@ -53,6 +57,11 @@ class Game : Printable{
 
         GameState currentState;
 
+        Clickable* saveGameButton; // Save Game button
+        Clickable* loadGameButton; // Load Game button
+
+        void saveGame(); // Method to save the game state
+        void loadGame(); // Method to load the game state
 };
 
 
