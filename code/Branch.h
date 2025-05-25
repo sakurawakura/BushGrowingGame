@@ -9,9 +9,15 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
 #include <iostream>
-#include <math.h> 
+#include <math.h>
+#include "include/nlohmann/json.hpp" // For JSON serialization
 
 #define _USE_MATH_DEFINES
+
+// Forward declaration for nlohmann::json
+namespace nlohmann {
+    class json;
+}
 
 using namespace std;
 using namespace cv;
@@ -56,6 +62,10 @@ class Branch : public Printable{
         bool containsMouse(int mouseX, int mouseY);
 
         void printData();
+
+        // Serialization/Deserialization
+        nlohmann::json toJson() const;
+        static Branch fromJson(const nlohmann::json& j);
 
     private:
         //Index of branch in tree
