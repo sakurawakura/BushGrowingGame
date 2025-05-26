@@ -67,6 +67,10 @@ class Game : Printable{
 
         void saveGame(); // Method to save the game state
         void loadGame(); // Method to load the game state
+
+        std::string transientMessage;
+        double transientMessageDurationSeconds;
+        double transientMessageStartTime; // To store time in seconds
 };
 
 

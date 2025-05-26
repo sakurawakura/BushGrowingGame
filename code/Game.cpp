@@ -13,6 +13,9 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     currentInputText = "";
     pendingActionType = 0; // 0 for None
 
+    transientMessage = "";
+    transientMessageDurationSeconds = 0.0;
+    transientMessageStartTime = 0.0;
 
     gamePlayer = new Player(10, 5);
 
@@ -72,7 +75,7 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     buttonList.push_back(new Clickable(reverseActionRect, 9, "Reverse action"));
 
     // Instantiate Save Game button
-    Rect saveGameButtonRect(220, WINDOW_HEIGHT-110, 200, 100); // Repositioned next to Cancel button
+    Rect saveGameButtonRect(140, 10, 120, 50); // Repositioned next to Back button
     saveGameButton = new Clickable(saveGameButtonRect, 10, "Save Game");
 
     // Instantiate Load Game button for Main Menu - MOVED UP AND ADJUSTED
@@ -255,6 +258,37 @@ void Game::drawScreen(){
             cv::putText(*screenImg, displayText, cv::Point(inputBoxRect.x + 10, inputBoxRect.y + 70), cv::FONT_HERSHEY_SIMPLEX, 0.7, CV_RGB(50,50,50), 2);
         }
         break;
+    }
+
+    if (!transientMessage.empty()) {
+        double currentTime = static_cast<double>(cv::getTickCount()) / cv::getTickFrequency();
+        if (currentTime - transientMessageStartTime < transientMessageDurationSeconds) {
+            // Display the message
+            cv::Size textSize = cv::getTextSize(transientMessage, cv::FONT_HERSHEY_SIMPLEX, 1.0, 2, nullptr);
+            cv::Point textOrg((WINDOW_WIDTH - textSize.width) / 2, WINDOW_HEIGHT / 2 + textSize.height / 2); // Centered
+            // Draw a semi-transparent background for the text for better visibility
+            // Ensure the background rectangle is within the screen boundaries
+            cv::Rect textBackgroundRect(
+                std::max(0, textOrg.x - 10), 
+                std::max(0, textOrg.y - textSize.height - 10), 
+                std::min(WINDOW_WIDTH - (textOrg.x - 10), textSize.width + 20), 
+                std::min(WINDOW_HEIGHT - (textOrg.y - textSize.height - 10), textSize.height + 20)
+            );
+
+            // Check if the background rectangle has valid dimensions
+            if (textBackgroundRect.width > 0 && textBackgroundRect.height > 0) {
+                 cv::Mat roi = (*screenImg)(textBackgroundRect);
+                 cv::Mat color(roi.size(), CV_8UC3, cv::Scalar(0, 0, 0)); 
+                 double alpha = 0.3;
+                 cv::addWeighted(color, alpha, roi, 1.0 - alpha , 0.0, roi); 
+            }
+            
+            // Put the text
+            cv::putText(*screenImg, transientMessage, textOrg, cv::FONT_HERSHEY_SIMPLEX, 1.0, CV_RGB(255, 255, 255), 2); // White text
+        } else {
+            // Time expired, clear the message
+            transientMessage = "";
+        }
     }
 
     cv::imshow("Time Travel Tree", *screenImg); // Restored GUI call
@@ -488,5 +522,10 @@ void Game::loadGame() {
 
     loadFile.close();
     std::cout << "Game loaded successfully from savegame.txt" << std::endl;
+
+    transientMessage = "Game Loaded!";
+    transientMessageStartTime = static_cast<double>(cv::getTickCount()) / cv::getTickFrequency(); // Get current time in seconds
+    transientMessageDurationSeconds = 3.0; // Display for 3 seconds
+
     currentState = IN_GAME; // Transition to game
 }
