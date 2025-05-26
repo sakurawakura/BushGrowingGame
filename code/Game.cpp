@@ -57,28 +57,28 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     buttonList.push_back(new Clickable(cancelPruningRect, 4, "Cancel"));
 
     Rect waterTreeButtonRect(WINDOW_WIDTH-buttonWidth, 0, buttonWidth, 100);
-    buttonList.push_back(new Clickable(waterTreeButtonRect, 5, "Water tree"));
+    buttonList.push_back(new Clickable(waterTreeButtonRect, 5, "Water Bush"));
 
     Rect fertiliseTreeRect(WINDOW_WIDTH-buttonWidth, 100, buttonWidth, 100);
-    buttonList.push_back(new Clickable(fertiliseTreeRect, 6, "Fertilise tree"));
+    buttonList.push_back(new Clickable(fertiliseTreeRect, 6, "Fertilise Bush"));
 
     Rect pruneBranchRect(WINDOW_WIDTH-buttonWidth, 200, buttonWidth, 100);
     buttonList.push_back(new Clickable(pruneBranchRect, 7, "Prune branch"));
 
     Rect growTreeRect(WINDOW_WIDTH-buttonWidth, 300, buttonWidth, 100);
-    buttonList.push_back(new Clickable(growTreeRect, 8, "Grow tree"));
+    buttonList.push_back(new Clickable(growTreeRect, 8, "Grow Bush"));
 
     Rect reverseActionRect(WINDOW_WIDTH-buttonWidth, 400, buttonWidth, 100);
-    buttonList.push_back(new Clickable(reverseActionRect, 9, "Reverse action"));
+    buttonList.push_back(new Clickable(reverseActionRect, 9, "Undo Action"));
 
     // Instantiate Save Game button
-    Rect saveGameButtonRect(WINDOW_WIDTH-buttonWidth, 500, buttonWidth, 100); // Placed below "Reverse action"
+    Rect saveGameButtonRect(150, 10, 180, 50); // Placed below "Reverse action"
     saveGameButton = new Clickable(saveGameButtonRect, 10, "Save Game");
 
     // Instantiate Load Game button for Main Menu - MOVED UP AND ADJUSTED
 
-    namedWindow("Time Travel Tree", 0); // Restored GUI call
-    setMouseCallback("Time Travel Tree", Game::handleMouseClick); // Restored GUI call
+    namedWindow("Bush Trimming Game", 0); // Restored GUI call
+    setMouseCallback("Bush Trimming Game", Game::handleMouseClick); // Restored GUI call
 
     //Tells the user how many supplies they have
     cout << "You have " << gamePlayer->getWaterSupply() << "L of water" << endl;
@@ -257,7 +257,7 @@ void Game::drawScreen(){
         break;
     }
 
-    cv::imshow("Time Travel Tree", *screenImg); // Restored GUI call
+    cv::imshow("Bush Trimming Game", *screenImg); // Restored GUI call
 }
 
 void Game::handleMouseClick(int event, int mouseX, int mouseY, int , void*){

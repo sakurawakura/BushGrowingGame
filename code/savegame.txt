@@ -1,0 +1,11 @@
+water 7
+fertiliser 21
+tree_max_index 7
+tree_water_level 5.95938
+tree_nutrient_level -9.04062
+num_branches 5
+branch index 0 parent_index 0 age 9 center_x 400 center_y 475 width 17.7131 height 120.858 angle 1 num_children 2 2 4
+branch index 2 parent_index 0 age 6 center_x 426.687 center_y 380.877 width 13.0279 height 84.6857 angle 37.2538 num_children 2 3 5
+branch index 3 parent_index 2 age 4 center_x 481.448 center_y 336.422 width 10.5953 height 62.0994 angle 69.7415 num_children 0
+branch index 4 parent_index 0 age 3 center_x 380.029 center_y 398.131 width 9.99672 height 53.3907 angle -51.9635 num_children 0
+branch index 5 parent_index 2 age 3 center_x 435.956 center_y 326.081 width 9.99672 height 53.3907 angle -37.802 num_children 0
