@@ -76,7 +76,7 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
 
     // Instantiate Save Game button
     Rect saveGameButtonRect(140, 10, 120, 50); // Repositioned next to Back button
-    saveGameButton = new Clickable(saveGameButtonRect, 10, "Save Game");
+    saveGameButton = new Clickable(saveGameButtonRect, 10, "Save");
 
     // Instantiate Load Game button for Main Menu - MOVED UP AND ADJUSTED
 
@@ -460,6 +460,9 @@ void Game::saveGame() {
     // For loadGame, fail() checks are more common during read operations.
     if (saveFile.good()) { 
         std::cout << "Game saved successfully to savegame.txt" << std::endl;
+        transientMessage = "Game Saved!";
+        transientMessageStartTime = static_cast<double>(cv::getTickCount()) / cv::getTickFrequency(); // Get current time in seconds
+        transientMessageDurationSeconds = 3.0; // Display for 3 seconds
     } else {
         std::cerr << "Error writing to savegame.txt." << std::endl;
     }
