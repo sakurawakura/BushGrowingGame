@@ -5,20 +5,20 @@ FertilisingAction::FertilisingAction(Player* currentPlayer, Tree* currentTree, f
     WateringAction(currentPlayer, currentTree, kilogramsToAdd), nutrientsAdded(kilogramsToAdd){};
 
 bool FertilisingAction::performAction(){
-    if(playerToModify->useFertiliser(nutrientsAdded)){
-        if(WateringAction::performAction()){
-
-        nutrientsAbsorbed = treeToModify->addNutrients(nutrientsAdded);
-        }else{
-            playerToModify->addFertiliser(nutrientsAdded);
-        }
+    if(playerToModify->useFertiliser(nutrientsAdded)){ // Attempt to use fertilizer from player
+        this->nutrientsAbsorbed = treeToModify->addNutrients(this->nutrientsAdded); // Add to tree
+        // Optional: Could log if nutrientsAbsorbed < nutrientsAdded
+        return true; // Successful if player had fertilizer
+    } else {
+        // Player didn't have enough fertilizer. Message is printed by useFertiliser.
+        this->nutrientsAbsorbed = 0;
+        return false; // Failed
     }
-    return true;
 };
 
 void FertilisingAction::reverseAction(){
-    playerToModify->addFertiliser(nutrientsAbsorbed);
-    WateringAction::reverseAction();
+    treeToModify->removeNutrients(this->nutrientsAbsorbed); // Remove only what was absorbed
+    playerToModify->addFertiliser(this->nutrientsAdded);    // Refund the amount initially intended
 };
 
 void FertilisingAction::printData(){

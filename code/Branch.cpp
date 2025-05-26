@@ -85,7 +85,9 @@ void Branch::grow(float areaIncrease, float &widthIncrease, float &lengthIncreas
 
     //The change in length is equal to (n/age) times the change in width, 
     //so the branch initially grows longer and then later grows wider
-    const float n_val = 20.0f; // Growth characteristic constant
+    
+    //Set n to an arbitrary value that can be adjusted during testing (effectively 20.0f)
+    const float n_factor = 20.0f;
 
     float current_width = branchRect.size.width;
     float current_length = branchRect.size.height;
@@ -95,38 +97,13 @@ void Branch::grow(float areaIncrease, float &widthIncrease, float &lengthIncreas
     //Increments age by one
     age++;
 
-    double discriminant = 0.0;
-    if (age > 0) {
-        discriminant = pow((n_val * current_width) / age + current_length, 2) + (4 * n_val * areaIncrease) / age;
-    } else { // Defensive case for age == 0 (should not happen if age is incremented from >= 0)
-        discriminant = pow(current_length, 2); 
-    }
-    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Discriminant value=" << discriminant << std::endl;
-
-    if (discriminant < 0.0 || age == 0) { // age == 0 check is defensive
-        widthIncrease = 0.0f;
-        lengthIncrease = 0.0f;
-    } else {
-        if (age > 0) { // This check is slightly redundant due to the outer age == 0 check, but kept for safety
-             widthIncrease = (-(n_val * current_width) / age - current_length + sqrt(discriminant)) / (2 * n_val / age);
-        } else { // Should ideally not be reached if age starts >=0 and is incremented
-             widthIncrease = 0.0f;
-        }
-
-        if (widthIncrease < 0.0f) {
-            widthIncrease = 0.0f;
-        }
-        
-        if (age > 0) {
-            lengthIncrease = (n_val / age) * widthIncrease;
-        } else { // Should ideally not be reached
-            lengthIncrease = 0.0f;
-        }
-
-        if (lengthIncrease < 0.0f) {
-            lengthIncrease = 0.0f;
-        }
-    }
+    // Original calculation (restored form):
+    // Age is incremented above, so it's assumed to be > 0 for division.
+    // The problem implies the original formula did not have explicit checks for negative sqrt.
+    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Term for sqrt (discriminant part before explicit calculation)=" << (pow((n_factor * current_width)/age + current_length, 2) + (4 * n_factor * areaIncrease)/age) << std::endl;
+    widthIncrease = (-(n_factor * current_width)/age - current_length + sqrt(pow((n_factor * current_width)/age + current_length, 2) + (4 * n_factor * areaIncrease)/age)) / (2 * n_factor / age);
+    lengthIncrease = (n_factor/age) * widthIncrease;
+    
     std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Calculated - widthIncrease=" << widthIncrease << ", lengthIncrease=" << lengthIncrease << std::endl;
 
     //Applies changes to variables
