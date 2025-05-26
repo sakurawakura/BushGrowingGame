@@ -55,6 +55,11 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     Rect loadGameButtonRect(mainMenuButtonX, loadGameButtonY, mainMenuButtonWidth, mainMenuButtonHeight); 
     loadGameButton = new Clickable(loadGameButtonRect, 11, "Load Game");
 
+    // Add Berries button
+    int berriesButtonY = loadGameButtonY + mainMenuButtonHeight + buttonGap; // Position below Load Game
+    Rect berriesMenuButtonRect(mainMenuButtonX, berriesButtonY, mainMenuButtonWidth, mainMenuButtonHeight);
+    berriesMenuButton = new Clickable(berriesMenuButtonRect, 12, "Berries"); // ID 12
+
 
     // Other Buttons (Back, Cancel, Actions, Save)
     Rect backButtonRect(10, 10, 120, 50); // Reduced size: Width 120, Height 50
@@ -106,7 +111,10 @@ Game::~Game(){
     delete gameTimeline;
     delete saveGameButton; // Free Save Game button
     delete loadGameButton; // Free Load Game button
-
+    if (berriesMenuButton) { // Check before deleting
+        delete berriesMenuButton;
+        berriesMenuButton = nullptr; 
+    }
 }
 
 void Game::drawScreen(){
@@ -156,6 +164,10 @@ void Game::drawScreen(){
         //Draws the load game button
         if (loadGameButton) { // Ensure it's initialized
             loadGameButton->draw(screenImg);
+        }
+        //Draws the berries button
+        if (berriesMenuButton) { // Ensure it's initialized
+            berriesMenuButton->draw(screenImg);
         }
         break;
     case INSTRUCTION_MENU:
@@ -230,6 +242,47 @@ void Game::drawScreen(){
             
             cv::putText(*screenImg, waterText, cv::Point(10, WINDOW_HEIGHT - 35), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
             cv::putText(*screenImg, fertText, cv::Point(10, WINDOW_HEIGHT - 15), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+        }
+        break;
+
+    case BERRIES_MENU:
+        { // Scope for local variables
+            // --- Draw Title ---
+            std::string titleText = "Berry Rarity Information";
+            int titleFontFace = cv::FONT_HERSHEY_TRIPLEX; 
+            double titleFontScale = 1.0;
+            int titleThickness = 2;
+            cv::Size titleTextSize = cv::getTextSize(titleText, titleFontFace, titleFontScale, titleThickness, nullptr);
+            cv::Point titleOrg((WINDOW_WIDTH - titleTextSize.width) / 2, 80); // Y=80 for title
+            cv::putText(*screenImg, titleText, titleOrg, titleFontFace, titleFontScale, cv::Scalar(0,0,0), titleThickness);
+
+            // --- Draw Rarity Info ---
+            int infoFont = cv::FONT_HERSHEY_DUPLEX; 
+            double infoFontScale = 0.7;
+            int infoThickness = 1;
+            cv::Scalar infoColor = cv::Scalar(0,0,0); // Black text
+
+            int startY = titleOrg.y + titleTextSize.height + 50; // Start Y for info text (added more space)
+            int lineHeight = 35; // Space between lines of text
+
+            // Centering text lines, or using a fixed X like 100
+            std::string redInfo = "Red Fruit: Common (Approx. 70% spawn rate)";
+            std::string blueInfo = "Blue Fruit: Uncommon (Approx. 25% spawn rate)";
+            std::string goldInfo = "Gold Fruit: Rare (Approx. 5% spawn rate)";
+
+            cv::Size redTextSize = cv::getTextSize(redInfo, infoFont, infoFontScale, infoThickness, nullptr);
+            cv::Size blueTextSize = cv::getTextSize(blueInfo, infoFont, infoFontScale, infoThickness, nullptr);
+            cv::Size goldTextSize = cv::getTextSize(goldInfo, infoFont, infoFontScale, infoThickness, nullptr);
+
+            cv::putText(*screenImg, redInfo, cv::Point((WINDOW_WIDTH - redTextSize.width) / 2, startY), infoFont, infoFontScale, infoColor, infoThickness);
+            cv::putText(*screenImg, blueInfo, cv::Point((WINDOW_WIDTH - blueTextSize.width) / 2, startY + lineHeight), infoFont, infoFontScale, infoColor, infoThickness);
+            cv::putText(*screenImg, goldInfo, cv::Point((WINDOW_WIDTH - goldTextSize.width) / 2, startY + 2 * lineHeight), infoFont, infoFontScale, infoColor, infoThickness);
+
+            // --- Draw Back Button ---
+            // Assuming buttonList[2] is the "Back" button, as used in INSTRUCTION_MENU
+            if (buttonList.size() > 2 && buttonList[2] != nullptr) {
+                 buttonList[2]->draw(screenImg);
+            }
         }
         break;
 
@@ -359,10 +412,20 @@ void Game::handleInputs(int keyPressed){ // Signature already changed in Game.h
                     if(buttonList[0]->contains(mousePos)){ buttonList[0]->isPressed = true; currentState = IN_GAME; }
                     else if(buttonList[1]->contains(mousePos)){ buttonList[1]->isPressed = true; currentState = INSTRUCTION_MENU; }
                     else if (loadGameButton && loadGameButton->contains(mousePos)) { loadGameButton->isPressed = true; loadGame(); }
+                    else if (berriesMenuButton && berriesMenuButton->contains(mousePos)) {
+                        berriesMenuButton->isPressed = true;
+                        currentState = BERRIES_MENU;
+                    }
                     break;
                 case INSTRUCTION_MENU:
                     if(buttonList[2]->contains(mousePos)){ buttonList[2]->isPressed = true; currentState = MAIN_MENU; }
                     break;
+                case BERRIES_MENU:
+                    if (buttonList[2] && buttonList[2]->contains(mousePos)) { // Assuming buttonList[2] is the "Back" button
+                        buttonList[2]->isPressed = true;
+                        currentState = MAIN_MENU;
+                    }
+                    break; 
                 case PRUNING_ACTION:
                     if(buttonList[3]->contains(mousePos)){ buttonList[3]->isPressed = true; currentState = IN_GAME; } // Cancel pruning
                     else if (prunedIndex != -1) {

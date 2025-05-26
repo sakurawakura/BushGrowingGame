@@ -24,7 +24,8 @@ enum GameState{
     IN_GAME,
     PRUNING_ACTION,
     AWAITING_WATER_INPUT,
-    AWAITING_FERTILISER_INPUT
+    AWAITING_FERTILISER_INPUT,
+    BERRIES_MENU // New state
 };
 
 class Game : Printable{
@@ -61,6 +62,7 @@ class Game : Printable{
 
         Clickable* saveGameButton; // Save Game button
         Clickable* loadGameButton; // Load Game button
+        Clickable* berriesMenuButton; // Berries button
 
         std::string currentInputText; // For text input pop-up
         int pendingActionType; // 0=None, 5=Water, 6=Fertiliser (matches button IDs)
