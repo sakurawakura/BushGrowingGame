@@ -99,14 +99,23 @@ void Tree::addBranches(vector<Branch*> newBranches){
 void Tree::grow(float &waterConsumed, float &nutrientsConsumed, 
     vector<float> &widthIncreases, vector<float> &lengthIncreases, vector<int> &branchesGrown){
 
+    std::cout << "DEBUG Tree::grow: START - waterLevel=" << waterLevel << ", nutrientLevel=" << nutrientLevel << ", maxWater=" << maxWater << ", maxNutrients=" << maxNutrients << std::endl;
+
     //Finds the growth amount of each branch based on the amount of water and nutrients
     float growthAmount = min(waterLevel, nutrientLevel);
+    if (growthAmount < 0.0f) {
+        growthAmount = 0.0f;
+    }
+    std::cout << "DEBUG Tree::grow: growthAmount (min(water,nutrient))=" << growthAmount << std::endl;
     float branchGrowthAmount = BRANCH_GROWTH_AMOUNT*growthAmount/branchList.size();
+    std::cout << "DEBUG Tree::grow: branchGrowthAmount (for each branch)=" << branchGrowthAmount << std::endl;
 
 
     //Removes water and nutrients based on the size of the tree
+    std::cout << "DEBUG Tree::grow: Deduction - water=" << (maxWater*0.05) << ", nutrients=" << (maxNutrients*0.05) << std::endl;
     waterLevel-= maxWater*0.05;
     nutrientLevel-= maxNutrients*0.05;
+    std::cout << "DEBUG Tree::grow: AFTER DEDUCTION - waterLevel=" << waterLevel << ", nutrientLevel=" << nutrientLevel << std::endl;
 
     //Updates output variables based on the amount of water and nutrients consumed
     waterConsumed = maxWater*0.05;
@@ -274,10 +283,12 @@ void Tree::updateMaxConstraints(){
     for(int i =0; i < branchList.size(); i++){
         totalArea += branchList[i]->getSize();
     }
+    std::cout << "DEBUG Tree::updateMaxConstraints: totalArea=" << totalArea << std::endl;
 
     //Updates the maximum water and nutrients that can be stored in the tree
     maxWater = totalArea/50;
     maxNutrients = totalArea/50;
+    std::cout << "DEBUG Tree::updateMaxConstraints: new maxWater=" << maxWater << ", new maxNutrients=" << maxNutrients << std::endl;
 
 }
 

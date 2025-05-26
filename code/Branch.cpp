@@ -83,27 +83,56 @@ void Branch::grow(float areaIncrease, float &widthIncrease, float &lengthIncreas
     //The change in length is equal to (n/age) times the change in width, 
     //so the branch initially grows longer and then later grows wider
 
-    //Set n to an arbitrary value that can be adjusted during testing
-    float n = 20;
+    //The change in length is equal to (n/age) times the change in width, 
+    //so the branch initially grows longer and then later grows wider
+    const float n_val = 20.0f; // Growth characteristic constant
+
+    float current_width = branchRect.size.width;
+    float current_length = branchRect.size.height;
+
+    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): START - areaIncrease=" << areaIncrease << ", currentWidth=" << current_width << ", currentLength=" << current_length << ", age=" << age << std::endl;
 
     //Increments age by one
     age++;
 
-    float width = branchRect.size.width;
-    float length = branchRect.size.height;
+    double discriminant = 0.0;
+    if (age > 0) {
+        discriminant = pow((n_val * current_width) / age + current_length, 2) + (4 * n_val * areaIncrease) / age;
+    } else { // Defensive case for age == 0 (should not happen if age is incremented from >= 0)
+        discriminant = pow(current_length, 2); 
+    }
+    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Discriminant value=" << discriminant << std::endl;
 
-    //formula for the increase in width derived using the quadratic formula
-    //widthIncrease = -width/2 - (length*age)/(2*n) + 
-    //sqrt((pow(width, 2))/4+(width*length*age)/(2*n)+(length*pow(age, 2))/(4*pow(n, 2)) + age*areaIncrease/n);
+    if (discriminant < 0.0 || age == 0) { // age == 0 check is defensive
+        widthIncrease = 0.0f;
+        lengthIncrease = 0.0f;
+    } else {
+        if (age > 0) { // This check is slightly redundant due to the outer age == 0 check, but kept for safety
+             widthIncrease = (-(n_val * current_width) / age - current_length + sqrt(discriminant)) / (2 * n_val / age);
+        } else { // Should ideally not be reached if age starts >=0 and is incremented
+             widthIncrease = 0.0f;
+        }
 
-    widthIncrease = (-(n*width)/age-length+sqrt(pow((n*width)/age+length, 2)+(4*n*areaIncrease)/age))/(2*n/age);
+        if (widthIncrease < 0.0f) {
+            widthIncrease = 0.0f;
+        }
+        
+        if (age > 0) {
+            lengthIncrease = (n_val / age) * widthIncrease;
+        } else { // Should ideally not be reached
+            lengthIncrease = 0.0f;
+        }
 
-    lengthIncrease = (n/age)*widthIncrease;
+        if (lengthIncrease < 0.0f) {
+            lengthIncrease = 0.0f;
+        }
+    }
+    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Calculated - widthIncrease=" << widthIncrease << ", lengthIncrease=" << lengthIncrease << std::endl;
 
     //Applies changes to variables
     branchRect.size.width += widthIncrease;
     branchRect.size.height += lengthIncrease;
-
+    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): END - newWidth=" << branchRect.size.width << ", newLength=" << branchRect.size.height << std::endl;
 
 }
 
