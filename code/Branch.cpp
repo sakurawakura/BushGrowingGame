@@ -97,12 +97,42 @@ void Branch::grow(float areaIncrease, float &widthIncrease, float &lengthIncreas
     //Increments age by one
     age++;
 
-    // Original calculation (restored form):
-    // Age is incremented above, so it's assumed to be > 0 for division.
-    // The problem implies the original formula did not have explicit checks for negative sqrt.
-    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Term for sqrt (discriminant part before explicit calculation)=" << (pow((n_factor * current_width)/age + current_length, 2) + (4 * n_factor * areaIncrease)/age) << std::endl;
-    widthIncrease = (-(n_factor * current_width)/age - current_length + sqrt(pow((n_factor * current_width)/age + current_length, 2) + (4 * n_factor * areaIncrease)/age)) / (2 * n_factor / age);
-    lengthIncrease = (n_factor/age) * widthIncrease;
+    // Robust growth calculation
+    double discriminant = 0.0;
+    if (age > 0) {
+        discriminant = pow((n_factor * current_width) / age + current_length, 2) + (4 * n_factor * areaIncrease) / age;
+    } else {
+        // This case should ideally not be hit if age is always incremented prior to meaningful growth.
+        // Default to a non-negative discriminant or handle as zero growth.
+        discriminant = pow(current_length, 2); 
+    }
+    // The existing debug message for discriminant_val can be reused or adapted:
+    std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Discriminant value=" << discriminant << std::endl;
+
+    if (discriminant < 0.0 || age == 0) { // Check age == 0 again for safety if division by age is part of the formula below
+        widthIncrease = 0.0f;
+        lengthIncrease = 0.0f;
+    } else {
+        if (age > 0) { // Ensure age is positive for division
+           widthIncrease = (-(n_factor * current_width) / age - current_length + sqrt(discriminant)) / (2 * n_factor / age);
+        } else {
+           widthIncrease = 0.0f; // Cannot grow if age is 0
+        }
+
+        if (widthIncrease < 0.0f) {
+            widthIncrease = 0.0f; // Clamp to non-negative
+        }
+       
+        if (age > 0) {
+           lengthIncrease = (n_factor / age) * widthIncrease;
+        } else {
+           lengthIncrease = 0.0f; // Cannot grow if age is 0
+        }
+
+        if (lengthIncrease < 0.0f) {
+            lengthIncrease = 0.0f; // Clamp to non-negative
+        }
+    }
     
     std::cout << "DEBUG Branch::grow (Index: " << this->index << "): Calculated - widthIncrease=" << widthIncrease << ", lengthIncrease=" << lengthIncrease << std::endl;
 

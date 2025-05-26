@@ -104,6 +104,9 @@ void Tree::grow(float &waterConsumed, float &nutrientsConsumed,
 
     //Finds the growth amount of each branch based on the amount of water and nutrients
     float growthAmount = min(waterLevel, nutrientLevel);
+    if (growthAmount < 0.0f) {
+        growthAmount = 0.0f;
+    }
     std::cout << "DEBUG Tree::grow: growthAmount (min(water,nutrient))=" << growthAmount << std::endl;
     float branchGrowthAmount = BRANCH_GROWTH_AMOUNT*growthAmount/branchList.size();
     std::cout << "DEBUG Tree::grow: branchGrowthAmount (for each branch)=" << branchGrowthAmount << std::endl;

@@ -219,20 +219,17 @@ void Game::drawScreen(){
 
         // Display Player Stats
         if (gamePlayer) {
+            // Display Fruit Counters (New consolidated and repositioned)
+            std::string fruitCounterText = "Fruits: R:" + std::to_string(redFruitsCollectedCount) +
+                                         " B:" + std::to_string(blueFruitsCollectedCount) +
+                                         " G:" + std::to_string(goldFruitsCollectedCount);
+            cv::putText(*screenImg, fruitCounterText, cv::Point(10, WINDOW_HEIGHT - 55), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+
             std::string waterText = "Water: " + std::to_string(static_cast<int>(gamePlayer->getWaterSupply())) + "L";
             std::string fertText = "Fertiliser: " + std::to_string(static_cast<int>(gamePlayer->getFertiliserSupply())) + "kg";
             
             cv::putText(*screenImg, waterText, cv::Point(10, WINDOW_HEIGHT - 35), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
             cv::putText(*screenImg, fertText, cv::Point(10, WINDOW_HEIGHT - 15), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
-
-            // Display Fruit Counters
-            std::string redText = "Red Fruits: " + std::to_string(redFruitsCollectedCount);
-            std::string blueText = "Blue Fruits: " + std::to_string(blueFruitsCollectedCount);
-            std::string goldText = "Gold Fruits: " + std::to_string(goldFruitsCollectedCount);
-            int statYStart = WINDOW_HEIGHT - 15; // Y where last player stat ended
-            cv::putText(*screenImg, redText,  cv::Point(10, statYStart + 20), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
-            cv::putText(*screenImg, blueText, cv::Point(10, statYStart + 40), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
-            cv::putText(*screenImg, goldText, cv::Point(10, statYStart + 60), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
         }
         break;
 
@@ -269,19 +266,16 @@ void Game::drawScreen(){
                 }
             }
              if (gamePlayer) { // Also draw stats
+                // Display Fruit Counters (New consolidated and repositioned)
+                std::string fruitCounterText = "Fruits: R:" + std::to_string(redFruitsCollectedCount) +
+                                             " B:" + std::to_string(blueFruitsCollectedCount) +
+                                             " G:" + std::to_string(goldFruitsCollectedCount);
+                cv::putText(*screenImg, fruitCounterText, cv::Point(10, WINDOW_HEIGHT - 55), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+
                 std::string waterText = "Water: " + std::to_string(static_cast<int>(gamePlayer->getWaterSupply())) + "L";
                 std::string fertText = "Fertiliser: " + std::to_string(static_cast<int>(gamePlayer->getFertiliserSupply())) + "kg";
                 cv::putText(*screenImg, waterText, cv::Point(10, WINDOW_HEIGHT - 35), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
                 cv::putText(*screenImg, fertText, cv::Point(10, WINDOW_HEIGHT - 15), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
-
-                // Display Fruit Counters
-                std::string redText = "Red Fruits: " + std::to_string(redFruitsCollectedCount);
-                std::string blueText = "Blue Fruits: " + std::to_string(blueFruitsCollectedCount);
-                std::string goldText = "Gold Fruits: " + std::to_string(goldFruitsCollectedCount);
-                int statYStart = WINDOW_HEIGHT - 15; // Y where last player stat ended
-                cv::putText(*screenImg, redText,  cv::Point(10, statYStart + 20), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
-                cv::putText(*screenImg, blueText, cv::Point(10, statYStart + 40), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
-                cv::putText(*screenImg, goldText, cv::Point(10, statYStart + 60), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
             }
 
             // Draw a semi-transparent overlay
