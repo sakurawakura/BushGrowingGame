@@ -72,7 +72,7 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     buttonList.push_back(new Clickable(reverseActionRect, 9, "Reverse action"));
 
     // Instantiate Save Game button
-    Rect saveGameButtonRect(WINDOW_WIDTH-buttonWidth, 500, buttonWidth, 100); // Placed below "Reverse action"
+    Rect saveGameButtonRect(220, WINDOW_HEIGHT-110, 200, 100); // Repositioned next to Cancel button
     saveGameButton = new Clickable(saveGameButtonRect, 10, "Save Game");
 
     // Instantiate Load Game button for Main Menu - MOVED UP AND ADJUSTED
@@ -155,19 +155,20 @@ void Game::drawScreen(){
         //Draws the back button
         buttonList[2]->draw(screenImg);
 
-        //Explains the instructions
-        int instructionFont = cv::FONT_HERSHEY_DUPLEX; // Changed font
-        double instructionFontScale = 0.8; // Slightly reduced scale for DUPLEX to fit well
-        int instructionThickness = 1;      // Adjusted thickness for DUPLEX
+        { // Start new scope block
+            //Explains the instructions
+            int instructionFont = cv::FONT_HERSHEY_DUPLEX; // Changed font
+            double instructionFontScale = 0.8; // Slightly reduced scale for DUPLEX to fit well
+            int instructionThickness = 1;      // Adjusted thickness for DUPLEX
 
-        putText(*screenImg, "Water and fertilise your tree so it grows", Point(WINDOW_WIDTH/2-300, 150), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "big and tall. Prune branches that you", Point(WINDOW_WIDTH/2-300, 200), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "want to remove and reverse your previous", Point(WINDOW_WIDTH/2-300, 250), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "actions if you make a mistake or don't", Point(WINDOW_WIDTH/2-300, 300), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "like how the tree has grown. You get 2L", Point(WINDOW_WIDTH/2-300, 350), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "water and 1kg fertiliser free every time", Point(WINDOW_WIDTH/2-300, 400), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-        putText(*screenImg, "you let your tree grow. Press ESC to quit", Point(WINDOW_WIDTH/2-300, 450), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-         
+            putText(*screenImg, "Water and fertilise your tree so it grows", Point(WINDOW_WIDTH/2-300, 150), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "big and tall. Prune branches that you", Point(WINDOW_WIDTH/2-300, 200), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "want to remove and reverse your previous", Point(WINDOW_WIDTH/2-300, 250), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "actions if you make a mistake or don't", Point(WINDOW_WIDTH/2-300, 300), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "like how the tree has grown. You get 2L", Point(WINDOW_WIDTH/2-300, 350), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "water and 1kg fertiliser free every time", Point(WINDOW_WIDTH/2-300, 400), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "you let your tree grow. Press ESC to quit", Point(WINDOW_WIDTH/2-300, 450), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+        } // End new scope block
         break;
     case PRUNING_ACTION:
         //Draws the cancel pruning button
@@ -304,7 +305,11 @@ void Game::handleInputs(int keyPressed){ // Signature already changed in Game.h
                     break;
                 case IN_GAME:
                     if(buttonList[2]->contains(mousePos)){ buttonList[2]->isPressed = true; currentState = MAIN_MENU; } // Back button
-                    else if (saveGameButton && saveGameButton->contains(mousePos)) { saveGameButton->isPressed = true; saveGame(); }
+                    else if (saveGameButton && saveGameButton->contains(mousePos)) {
+                        std::cout << "DEBUG: Save Game button clicked in IN_GAME state." << std::endl;
+                        saveGameButton->isPressed = true;
+                        saveGame();
+                    }
                     else if(buttonList[4]->contains(mousePos)){ // Water tree button (ID 5)
                         buttonList[4]->isPressed = true;
                         currentState = AWAITING_WATER_INPUT;
@@ -377,116 +382,6 @@ void Game::handleInputs(int keyPressed){ // Signature already changed in Game.h
         }
         // Other global key presses (not related to text input) could be handled here if needed
     }
-}
-
-
-void Game::printData(){
-    cout << "Game object" << endl;
-    gameTree->printData();
-    gamePlayer->printData();
-    gameTimeline->printData();
-
-    cout << "Window width: " << WINDOW_WIDTH << endl;
-    cout << "Window height: " << WINDOW_HEIGHT << endl;
-
-    cout << "Game state: " << currentState << endl;
-}
-
-void Game::saveGame() {
-    std::ofstream saveFile("savegame.txt");
-    if (!saveFile.is_open()) {
-        std::cerr << "Error: Could not open savegame.txt for writing." << std::endl;
-        return;
-    }
-
-    // Save Player data
-    if (gamePlayer) {
-        gamePlayer->saveToStream(saveFile);
-    } else {
-        std::cerr << "Error: gamePlayer object is null. Cannot save player data." << std::endl;
-        // Optionally, write placeholder player data or skip
-    }
-
-    // Save Tree data
-    if (gameTree) {
-        gameTree->saveToStream(saveFile);
-    } else {
-        std::cerr << "Error: gameTree object is null. Cannot save tree data." << std::endl;
-        // Optionally, write placeholder tree data or skip
-    }
-
-    saveFile.close();
-    // Check stream state *before* closing for output streams.
-    // However, to match the prompt's style for saveGame, we'll keep the good() check after close.
-    // For loadGame, fail() checks are more common during read operations.
-    if (saveFile.good()) { 
-        std::cout << "Game saved successfully to savegame.txt" << std::endl;
-    } else {
-        std::cerr << "Error writing to savegame.txt." << std::endl;
-    }
-}
-
-void Game::loadGame() {
-    std::ifstream loadFile("savegame.txt");
-    if (!loadFile.is_open()) {
-        std::cerr << "Error: Could not open savegame.txt for reading. Starting new game." << std::endl;
-        // Optionally, initialize a default game state here or let the main menu handle it.
-        // For now, just returning will keep the user on the main menu.
-        return;
-    }
-
-    // --- Clean up existing game state before loading ---
-    // Delete old tree, player, and timeline
-    if (gameTree) {
-        delete gameTree;
-        gameTree = nullptr;
-    }
-    if (gamePlayer) {
-        delete gamePlayer;
-        gamePlayer = nullptr;
-    }
-    if (gameTimeline) {
-        delete gameTimeline;
-        gameTimeline = nullptr; // Will be recreated
-    }
-    
-    // Recreate timeline
-    gameTimeline = new Timeline();
-
-
-    // --- Load Player data ---
-    Player loadedPlayer = Player::loadFromStream(loadFile);
-    if (loadFile.fail()) { // Check for stream errors after trying to load player
-        std::cerr << "Error loading player data from savegame.txt. Starting new game." << std::endl;
-        loadFile.close();
-        // Initialize with default player and tree if player loading fails
-        gamePlayer = new Player(10, 5); // Default player
-        gameTree = new Tree(10, 10, new Branch(0, 0, 1, 50, 10, WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT)); // Default tree
-        currentState = MAIN_MENU; // Stay on main menu or go to new game
-        return;
-    }
-    gamePlayer = new Player(loadedPlayer); // Create a heap-allocated copy
-
-    // --- Load Tree data ---
-    // Pass WINDOW_WIDTH and WINDOW_HEIGHT to Tree::loadFromStream for default trunk creation if needed
-    Tree* loadedTreePtr = Tree::loadFromStream(loadFile, WINDOW_WIDTH, WINDOW_HEIGHT); 
-    if (!loadedTreePtr || loadFile.fail()) { // Check for stream errors or if loadFromStream returned nullptr
-        std::cerr << "Error loading tree data from savegame.txt. Starting new game with loaded player." << std::endl;
-        loadFile.close();
-        // Player data was loaded, but tree failed. Create default tree.
-        // gamePlayer is already set from above.
-        gameTree = new Tree(10, 10, new Branch(0, 0, 1, 50, 10, WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT)); // Default tree
-        currentState = MAIN_MENU; // Stay on main menu or go to new game
-        return;
-    }
-    gameTree = loadedTreePtr; // Assign the loaded tree
-
-    loadFile.close();
-    std::cout << "Game loaded successfully from savegame.txt" << std::endl;
-    currentState = IN_GAME; // Transition to game
-}
-    // No default case needed for mouse handling as it's gated by non-input states.
-    // Keyboard handling (below) will manage input states.
 }
 
 
