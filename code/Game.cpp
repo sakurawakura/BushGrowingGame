@@ -17,6 +17,10 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     transientMessageDurationSeconds = 0.0;
     transientMessageStartTime = 0.0;
 
+    redFruitsCollectedCount = 0;
+    blueFruitsCollectedCount = 0;
+    goldFruitsCollectedCount = 0;
+
     gamePlayer = new Player(10, 5);
 
     //Creates tree with a default supply of 10L of water and 10kg of nutrients
@@ -201,6 +205,18 @@ void Game::drawScreen(){
         //Draws the tree to the screen
         gameTree->draw(screenImg);
 
+        // Draw fruits
+        if (gameTree) { // Ensure gameTree is not null
+            const std::vector<Fruit>& fruits = gameTree->getFruitsList();
+            for (const Fruit& fruit : fruits) {
+                if (!fruit.collected) { // Only draw if not collected
+                    cv::circle(*screenImg, fruit.position, static_cast<int>(fruit.radius), fruit.color, -1); // -1 for filled circle
+                    // Optional: Add a border to the fruit
+                    // cv::circle(*screenImg, fruit.position, static_cast<int>(fruit.radius), CV_RGB(0,0,0), 1); // Black border, 1px thick
+                }
+            }
+        }
+
         // Display Player Stats
         if (gamePlayer) {
             std::string waterText = "Water: " + std::to_string(static_cast<int>(gamePlayer->getWaterSupply())) + "L";
@@ -208,6 +224,15 @@ void Game::drawScreen(){
             
             cv::putText(*screenImg, waterText, cv::Point(10, WINDOW_HEIGHT - 35), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
             cv::putText(*screenImg, fertText, cv::Point(10, WINDOW_HEIGHT - 15), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+
+            // Display Fruit Counters
+            std::string redText = "Red Fruits: " + std::to_string(redFruitsCollectedCount);
+            std::string blueText = "Blue Fruits: " + std::to_string(blueFruitsCollectedCount);
+            std::string goldText = "Gold Fruits: " + std::to_string(goldFruitsCollectedCount);
+            int statYStart = WINDOW_HEIGHT - 15; // Y where last player stat ended
+            cv::putText(*screenImg, redText,  cv::Point(10, statYStart + 20), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+            cv::putText(*screenImg, blueText, cv::Point(10, statYStart + 40), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+            cv::putText(*screenImg, goldText, cv::Point(10, statYStart + 60), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
         }
         break;
 
@@ -233,12 +258,30 @@ void Game::drawScreen(){
             buttonList[2]->draw(screenImg); // Back button
             for(int i = 4; i < buttonList.size(); i++){ buttonList[i]->draw(screenImg); } // Action buttons
             if (saveGameButton) { saveGameButton->draw(screenImg); }
-            if (gameTree) { gameTree->draw(screenImg); }
+            if (gameTree) { 
+                gameTree->draw(screenImg); 
+                // Also draw fruits in the pop-up background
+                const std::vector<Fruit>& fruits = gameTree->getFruitsList();
+                for (const Fruit& fruit : fruits) {
+                    if (!fruit.collected) {
+                        cv::circle(*screenImg, fruit.position, static_cast<int>(fruit.radius), fruit.color, -1);
+                    }
+                }
+            }
              if (gamePlayer) { // Also draw stats
                 std::string waterText = "Water: " + std::to_string(static_cast<int>(gamePlayer->getWaterSupply())) + "L";
                 std::string fertText = "Fertiliser: " + std::to_string(static_cast<int>(gamePlayer->getFertiliserSupply())) + "kg";
                 cv::putText(*screenImg, waterText, cv::Point(10, WINDOW_HEIGHT - 35), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
                 cv::putText(*screenImg, fertText, cv::Point(10, WINDOW_HEIGHT - 15), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+
+                // Display Fruit Counters
+                std::string redText = "Red Fruits: " + std::to_string(redFruitsCollectedCount);
+                std::string blueText = "Blue Fruits: " + std::to_string(blueFruitsCollectedCount);
+                std::string goldText = "Gold Fruits: " + std::to_string(goldFruitsCollectedCount);
+                int statYStart = WINDOW_HEIGHT - 15; // Y where last player stat ended
+                cv::putText(*screenImg, redText,  cv::Point(10, statYStart + 20), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+                cv::putText(*screenImg, blueText, cv::Point(10, statYStart + 40), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+                cv::putText(*screenImg, goldText, cv::Point(10, statYStart + 60), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
             }
 
             // Draw a semi-transparent overlay
@@ -338,35 +381,56 @@ void Game::handleInputs(int keyPressed){ // Signature already changed in Game.h
                     }
                     break;
                 case IN_GAME:
-                    if(buttonList[2]->contains(mousePos)){ buttonList[2]->isPressed = true; currentState = MAIN_MENU; } // Back button
-                    else if (saveGameButton && saveGameButton->contains(mousePos)) {
-                        std::cout << "DEBUG: Save Game button clicked in IN_GAME state." << std::endl;
-                        saveGameButton->isPressed = true;
-                        saveGame();
+                    { // Use a block to scope collectedType and collectedId if needed, or declare them outside switch
+                        FruitType collectedType;
+                        int collectedId;
+                        if (gameTree && gameTree->collectFruitAtPoint(mousePos, collectedType, collectedId)) {
+                            // std::cout << "INFO: Collected fruit of type " << static_cast<int>(collectedType) << " with ID " << collectedId << std::endl; // Remove/comment this
+                            if (collectedType == FruitType::RED) {
+                                redFruitsCollectedCount++;
+                            } else if (collectedType == FruitType::BLUE) {
+                                blueFruitsCollectedCount++;
+                            } else if (collectedType == FruitType::GOLD) {
+                                goldFruitsCollectedCount++;
+                            }
+                            // Game::mouseClicked = false; // This is handled by the outer structure
+                        } else if (buttonList[2]->contains(mousePos)) { // Back button
+                            buttonList[2]->isPressed = true;
+                            currentState = MAIN_MENU;
+                        } else if (saveGameButton && saveGameButton->contains(mousePos)) {
+                            std::cout << "DEBUG: Save Game button clicked in IN_GAME state." << std::endl;
+                            saveGameButton->isPressed = true;
+                            saveGame();
+                        } else if (buttonList[4]->contains(mousePos)) { // Water tree button (ID 5)
+                            buttonList[4]->isPressed = true;
+                            currentState = AWAITING_WATER_INPUT;
+                            pendingActionType = 5;
+                            currentInputText = "";
+                            // Game::mouseClicked = false; // Not needed due to return
+                            return; 
+                        } else if (buttonList[5]->contains(mousePos)) { // Fertilise tree button (ID 6)
+                            buttonList[5]->isPressed = true;
+                            currentState = AWAITING_FERTILISER_INPUT;
+                            pendingActionType = 6;
+                            currentInputText = "";
+                            // Game::mouseClicked = false; // Not needed due to return
+                            return; 
+                        } else if (buttonList[6]->contains(mousePos)) { // Prune branch
+                            buttonList[6]->isPressed = true;
+                            currentState = PRUNING_ACTION;
+                        } else if (buttonList[7]->contains(mousePos)) { // Grow tree
+                            buttonList[7]->isPressed = true;
+                            gameTimeline->performAction(new GrowingAction(gamePlayer, gameTree));
+                        } else if (buttonList[8]->contains(mousePos)) { // Reverse action
+                            buttonList[8]->isPressed = true;
+                            gameTimeline->reverseAction();
+                        }
+                        // If a fruit was collected, the click is effectively consumed for other actions
+                        // as it was handled in the first 'if' block.
+                        // If AWAITING_... states are entered, 'return' exits.
+                        // Otherwise, mouseClicked is naturally consumed at the start of handleInputs for the next event.
                     }
-                    else if(buttonList[4]->contains(mousePos)){ // Water tree button (ID 5)
-                        buttonList[4]->isPressed = true;
-                        currentState = AWAITING_WATER_INPUT;
-                        pendingActionType = 5;
-                        currentInputText = "";
-                        return; 
-                    } else if (buttonList[5]->contains(mousePos)){ // Fertilise tree button (ID 6)
-                        buttonList[5]->isPressed = true;
-                        currentState = AWAITING_FERTILISER_INPUT;
-                        pendingActionType = 6;
-                        currentInputText = "";
-                        return; 
-                    } else if (buttonList[6]->contains(mousePos)){ // Prune branch
-                        buttonList[6]->isPressed = true;
-                        currentState = PRUNING_ACTION;
-                    } else if (buttonList[7]->contains(mousePos)){ // Grow tree
-                        buttonList[7]->isPressed = true;
-                        gameTimeline->performAction(new GrowingAction(gamePlayer, gameTree));
-                    } else if(buttonList[8]->contains(mousePos)){ // Reverse action
-                        buttonList[8]->isPressed = true;
-                        gameTimeline->reverseAction();
-                    }
-                    break;
+                    break; // End of IN_GAME case
                 default: 
                     break;
             }

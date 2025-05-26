@@ -31,6 +31,7 @@ nutrientLevel(initialNutrients), maxIndex(1) {
     //Updates the max water and nutrients of the tree
     updateMaxConstraints();
 
+    nextFruitId = 0; // Initialize nextFruitId
 }
 
 Tree::~Tree(){
@@ -120,6 +121,8 @@ void Tree::grow(float &waterConsumed, float &nutrientsConsumed,
 
     int currentNumBranches = branchList.size();
 
+    const float FRUIT_SPAWN_PROBABILITY = 0.1f;
+
     for(int branchIndex = 0; branchIndex < currentNumBranches; branchIndex++){
 
         float widthGrowth;
@@ -142,6 +145,31 @@ void Tree::grow(float &waterConsumed, float &nutrientsConsumed,
         float newTipY;
         branchList[branchIndex]->getTipPos(newTipX, newTipY);
 
+        if (!branchList.empty() && branchIndex < branchList.size() && branchList[branchIndex] != nullptr && (float)rand()/RAND_MAX < FRUIT_SPAWN_PROBABILITY) {
+            float fruitX_tip, fruitY_tip; // Use different names to avoid conflict with newTipX/Y for branch
+            branchList[branchIndex]->getTipPos(fruitX_tip, fruitY_tip); // Get tip position of the current branch
+
+            FruitType spawnedFruitType;
+            cv::Scalar spawnedFruitColor;
+            float randVal = (float)rand() / RAND_MAX;
+
+            if (randVal < 0.05f) { // 5% Gold
+                spawnedFruitType = FruitType::GOLD;
+                spawnedFruitColor = CV_RGB(255, 215, 0);
+            } else if (randVal < 0.30f) { // 25% Blue
+                spawnedFruitType = FruitType::BLUE;
+                spawnedFruitColor = CV_RGB(0, 0, 255);
+            } else { // 70% Red
+                spawnedFruitType = FruitType::RED;
+                spawnedFruitColor = CV_RGB(255, 0, 0);
+            }
+            
+            float fruitRadius = 5.0f;
+
+            fruitsList.emplace_back(cv::Point2f(fruitX_tip, fruitY_tip), spawnedFruitColor, fruitRadius, spawnedFruitType, nextFruitId++, branchList[branchIndex]->getIndex());
+            // Optional: Add a std::cout debug message here if you want to confirm fruit spawning in console
+            // std::cout << "DEBUG Tree::grow: Spawned fruit ID " << (nextFruitId-1) << " of type " << static_cast<int>(spawnedFruitType) << " on branch " << branchList[branchIndex]->getIndex() << std::endl;
+        }
 
         //Adds a new branch if the tree has the required nutrients and water
         if(min(nutrientLevel, waterLevel) > NEW_BRANCH_REQUIREMENT && 
@@ -312,6 +340,28 @@ void Tree::updateBranchPos(){
     }
 }
 
+const std::vector<Fruit>& Tree::getFruitsList() const {
+    return fruitsList;
+}
+
+bool Tree::collectFruitAtPoint(const cv::Point& clickPoint, FruitType& outCollectedFruitType, int& outCollectedFruitId) {
+    for (Fruit& fruit : fruitsList) { // Iterate with non-const reference to modify 'collected'
+        if (!fruit.collected) {
+            // Simple circle collision detection: (x2-x1)^2 + (y2-y1)^2 < r^2
+            float distanceSq = pow(static_cast<float>(clickPoint.x) - fruit.position.x, 2) + 
+                             pow(static_cast<float>(clickPoint.y) - fruit.position.y, 2);
+            if (distanceSq < (fruit.radius * fruit.radius)) {
+                fruit.collected = true; // Mark as collected
+                outCollectedFruitType = fruit.type;
+                outCollectedFruitId = fruit.id;
+                // std::cout << "DEBUG Tree::collectFruitAtPoint: Fruit ID " << fruit.id << " collected!" << std::endl; // Optional debug
+                return true; // Fruit collected
+            }
+        }
+    }
+    return false; // No fruit collected at this point
+}
+
 void Tree::draw(Mat* img){
     for(int i = 0; i < branchList.size(); i++){
         branchList[i]->draw(img);
@@ -359,6 +409,23 @@ void Tree::saveToStream(std::ostream& out) const {
         if (branch) {
             branch->saveToStream(out); // Each branch writes its own newline
         }
+    }
+    // Save fruit data
+    out << "next_fruit_id " << nextFruitId << std::endl;
+    out << "num_fruits " << fruitsList.size() << std::endl;
+    for (const Fruit& fruit : fruitsList) {
+        out << "fruit"
+            << " id " << fruit.id
+            << " parent_branch_idx " << fruit.parentBranchIndex
+            << " type " << static_cast<int>(fruit.type)
+            << " pos_x " << fruit.position.x
+            << " pos_y " << fruit.position.y
+            << " radius " << fruit.radius
+            << " color_b " << fruit.color[0] // Assuming BGR order for cv::Scalar
+            << " color_g " << fruit.color[1]
+            << " color_r " << fruit.color[2]
+            << " collected " << fruit.collected // Saving the collected status
+            << std::endl;
     }
 }
 
@@ -459,6 +526,52 @@ Tree* Tree::loadFromStream(std::istream& in, int windowWidth, int windowHeight) 
     }
     
     loadedTree->maxIndex = p_maxIndex;
+    // Fruit loading should happen before final updates if they depend on fruit data,
+    // but after loadedTree and its branchList are confirmed to be valid.
+    // For now, assuming updateMaxConstraints and updateBranchPos don't depend on fruitsList.
+
+    std::string keyword_fruit; // Use a different keyword variable to avoid conflicts if any outer scope uses 'keyword'
+    // Load next_fruit_id
+    if (!(in >> keyword_fruit >> loadedTree->nextFruitId) || keyword_fruit != "next_fruit_id") {
+        std::cerr << "Error: Failed to read next_fruit_id or keyword mismatch. Defaulting to 0." << std::endl;
+        loadedTree->nextFruitId = 0; 
+    }
+    
+    int num_fruits = 0;
+    if (!(in >> keyword_fruit >> num_fruits) || keyword_fruit != "num_fruits") {
+        std::cerr << "Error: Failed to read num_fruits or keyword mismatch. Defaulting to 0 fruits." << std::endl;
+        num_fruits = 0; 
+    }
+
+    loadedTree->fruitsList.clear();
+    loadedTree->fruitsList.reserve(num_fruits);
+    for (int i = 0; i < num_fruits; ++i) {
+        Fruit tempFruit;
+        int fruit_type_int;
+        bool fruit_collected_bool; // To read integer 0 or 1
+
+        if (!(in >> keyword_fruit) || keyword_fruit != "fruit") { std::cerr << "Error: Expected 'fruit' keyword for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> tempFruit.id) || keyword_fruit != "id") { std::cerr << "Error: Bad 'id' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> tempFruit.parentBranchIndex) || keyword_fruit != "parent_branch_idx") { std::cerr << "Error: Bad 'parent_branch_idx' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> fruit_type_int) || keyword_fruit != "type") { std::cerr << "Error: Bad 'type' for fruit " << i << std::endl; break; }
+        tempFruit.type = static_cast<FruitType>(fruit_type_int);
+        if (!(in >> keyword_fruit >> tempFruit.position.x) || keyword_fruit != "pos_x") { std::cerr << "Error: Bad 'pos_x' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> tempFruit.position.y) || keyword_fruit != "pos_y") { std::cerr << "Error: Bad 'pos_y' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> tempFruit.radius) || keyword_fruit != "radius") { std::cerr << "Error: Bad 'radius' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> tempFruit.color[0]) || keyword_fruit != "color_b") { std::cerr << "Error: Bad 'color_b' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> tempFruit.color[1]) || keyword_fruit != "color_g") { std::cerr << "Error: Bad 'color_g' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> tempFruit.color[2]) || keyword_fruit != "color_r") { std::cerr << "Error: Bad 'color_r' for fruit " << i << std::endl; break; }
+        if (!(in >> keyword_fruit >> fruit_collected_bool) || keyword_fruit != "collected") { std::cerr << "Error: Bad 'collected' for fruit " << i << std::endl; break; }
+        tempFruit.collected = fruit_collected_bool;
+        
+        loadedTree->fruitsList.push_back(tempFruit);
+    }
+
+    if (in.fail() && !in.eof()) { 
+       std::cerr << "Error reading fruits data stream section." << std::endl;
+       // Depending on desired robustness, might clear fruitsList or flag error
+    }
+    
     loadedTree->updateMaxConstraints(); 
     loadedTree->updateBranchPos(); 
 

@@ -6,6 +6,7 @@
 #include <iostream>
 #include "Branch.h"
 #include "Printable.h"
+#include "Fruit.h" // Added Fruit.h include
 // Removed: #include "include/nlohmann/json.hpp" // For JSON serialization
 
 // Removed: Forward declaration for nlohmann::json
@@ -64,6 +65,9 @@ class Tree : public Printable{
         void saveToStream(std::ostream& out) const;
         static Tree* loadFromStream(std::istream& in, int windowWidth, int windowHeight);
 
+        const std::vector<Fruit>& getFruitsList() const; // Getter for fruitsList
+        bool collectFruitAtPoint(const cv::Point& clickPoint, FruitType& outCollectedFruitType, int& outCollectedFruitId);
+
     private:
         vector<Branch*> branchList;
 
@@ -72,6 +76,9 @@ class Tree : public Printable{
         float maxWater;
         float nutrientLevel;
         float maxNutrients;
+
+        std::vector<Fruit> fruitsList;
+        int nextFruitId; 
 };
 
 #endif

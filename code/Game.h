@@ -71,6 +71,11 @@ class Game : Printable{
         std::string transientMessage;
         double transientMessageDurationSeconds;
         double transientMessageStartTime; // To store time in seconds
+
+        // Fruit collection counters
+        int redFruitsCollectedCount;
+        int blueFruitsCollectedCount;
+        int goldFruitsCollectedCount;
 };
 
 
