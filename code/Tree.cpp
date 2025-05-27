@@ -592,19 +592,3 @@ Tree* Tree::loadFromStream(std::istream& in, int windowWidth, int windowHeight) 
 
     return loadedTree;
 }
-
-void Tree::resetAllBranchWaterCounters() {
-    for (Branch* branch : branchList) {
-        if (branch->getIsAlive()) { // Only reset for living branches
-            branch->resetTurnsWithoutWater(); // New method in Branch (to be implemented)
-        }
-    }
-}
-
-void Tree::resetAllBranchNutrientCounters() {
-    for (Branch* branch : branchList) {
-        if (branch->getIsAlive()) { // Only reset for living branches
-            branch->resetTurnsWithoutNutrients(); // New method in Branch (to be implemented)
-        }
-    }
-}
