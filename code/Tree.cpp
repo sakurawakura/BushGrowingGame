@@ -4,6 +4,7 @@
 #include <limits>    // For std::numeric_limits
 #include <sstream>   // For std::istringstream
 #include <iostream>  // For std::cerr, std::endl
+#include <algorithm> // For std::min
 
 //Maximum area of a branch before it will no longer sprout new branches
 const float NEW_BRANCH_THRESHOLD = 5000;
@@ -17,6 +18,10 @@ const float BRANCH_GROWTH_AMOUNT = 50;
 
 //Chance of each existing branch growing a new branch
 const float NEW_BRANCH_PROBABILITY = 0.7;
+
+// Resource consumption constants per branch per growth cycle
+const float WATER_CONSUMPTION_PER_BRANCH = 0.1f; 
+const float NUTRIENT_CONSUMPTION_PER_BRANCH = 0.05f;
 
 
 Tree::Tree(float initialWater, float initialNutrients, Branch* trunk): waterLevel(initialWater), 
@@ -139,14 +144,33 @@ void Tree::grow(float &waterConsumed, float &nutrientsConsumed,
         branchGrowthAmount = BRANCH_GROWTH_AMOUNT * growthAmount / branchList.size();
     }
 
+    // Calculate consumption based on the number of living branches
+    float currentWaterConsumption = 0.0f;
+    float currentNutrientConsumption = 0.0f;
+    int livingBranchesCount = 0;
 
-    //Removes water and nutrients based on the size of the tree
-    waterLevel-= maxWater*0.05;
-    nutrientLevel-= maxNutrients*0.05;
+    for (Branch* branch : branchList) {
+        if (branch->getIsAlive()) {
+            livingBranchesCount++;
+        }
+    }
+    
+    // Only consume if there are living branches
+    if (livingBranchesCount > 0) { 
+        currentWaterConsumption = livingBranchesCount * WATER_CONSUMPTION_PER_BRANCH;
+        currentNutrientConsumption = livingBranchesCount * NUTRIENT_CONSUMPTION_PER_BRANCH;
+    }
+
+    // Clamp consumption to ensure resource levels don't go below zero due to this consumption step
+    currentWaterConsumption = std::min(currentWaterConsumption, waterLevel);
+    currentNutrientConsumption = std::min(currentNutrientConsumption, nutrientLevel);
+
+    waterLevel -= currentWaterConsumption;
+    nutrientLevel -= currentNutrientConsumption;
 
     //Updates output variables based on the amount of water and nutrients consumed
-    waterConsumed = maxWater*0.05;
-    nutrientsConsumed = maxNutrients*0.05;
+    waterConsumed = currentWaterConsumption;
+    nutrientsConsumed = currentNutrientConsumption;
 
     int currentNumBranches = branchList.size();
 
