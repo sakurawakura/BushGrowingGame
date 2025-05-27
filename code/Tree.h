@@ -6,13 +6,7 @@
 #include <iostream>
 #include "Branch.h"
 #include "Printable.h"
-#include "Fruit.h" // Added Fruit.h include
-// Removed: #include "include/nlohmann/json.hpp" // For JSON serialization
-
-// Removed: Forward declaration for nlohmann::json
-// namespace nlohmann {
-//     class json;
-// }
+#include "Fruit.h"
 
 using namespace std;
 
@@ -67,6 +61,10 @@ class Tree : public Printable{
 
         const std::vector<Fruit>& getFruitsList() const; // Getter for fruitsList
         bool collectFruitAtPoint(const cv::Point& clickPoint, FruitType& outCollectedFruitType, int& outCollectedFruitId);
+
+        // Methods related to branch sustenance
+        void resetAllBranchWaterCounters();     ///< Resets the 'turnsWithoutWater' counter for all living branches.
+        void resetAllBranchNutrientCounters();  ///< Resets the 'turnsWithoutNutrients' counter for all living branches.
 
     private:
         vector<Branch*> branchList;

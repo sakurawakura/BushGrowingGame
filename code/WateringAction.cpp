@@ -6,6 +6,7 @@ WateringAction::WateringAction(Player* currentPlayer, Tree* currentTree, float l
 bool WateringAction::performAction() {
     if(playerToModify->useWater(waterAdded)){
         waterAbsorbed = treeToModify->addWater(waterAdded);
+        treeToModify->resetAllBranchWaterCounters(); // Reset water counters for all living branches
         return true;
     }else{
         waterAbsorbed = 0;

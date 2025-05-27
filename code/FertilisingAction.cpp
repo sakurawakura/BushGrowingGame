@@ -7,7 +7,7 @@ FertilisingAction::FertilisingAction(Player* currentPlayer, Tree* currentTree, f
 bool FertilisingAction::performAction(){
     if(playerToModify->useFertiliser(nutrientsAdded)){ // Attempt to use fertilizer from player
         this->nutrientsAbsorbed = treeToModify->addNutrients(this->nutrientsAdded); // Add to tree
-        // Optional: Could log if nutrientsAbsorbed < nutrientsAdded
+        treeToModify->resetAllBranchNutrientCounters(); // Reset nutrient counters for all living branches
         return true; // Successful if player had fertilizer
     } else {
         // Player didn't have enough fertilizer. Message is printed by useFertiliser.

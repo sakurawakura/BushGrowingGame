@@ -25,9 +25,13 @@ enum GameState{
     PRUNING_ACTION,
     AWAITING_WATER_INPUT,
     AWAITING_FERTILISER_INPUT,
-    BERRIES_MENU // New state
+    BERRIES_MENU
 };
 
+/**
+ * @brief Manages the overall game state, game loop, user input, and screen rendering.
+ * It orchestrates interactions between the Player, Tree, Timeline, and UI elements.
+ */
 class Game : Printable{
     public:
         Game(int windowWidth, int windowHeight);
@@ -47,7 +51,7 @@ class Game : Printable{
         static bool mouseClicked;
 
     private:
-        Mat* screenImg;
+        Mat* screenImg;                 ///< Main image buffer where the game scene is drawn.
 
         Tree* gameTree;
         Player* gamePlayer;

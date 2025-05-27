@@ -65,7 +65,7 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     Rect backButtonRect(10, 10, 120, 50); // Reduced size: Width 120, Height 50
     buttonList.push_back(new Clickable(backButtonRect, 3, "Back" ));
 
-    Rect cancelPruningRect(10, WINDOW_HEIGHT-110, 200, 100);
+    Rect cancelPruningRect(10, WINDOW_HEIGHT-60, 150, 50); // Modified dimensions and position
     buttonList.push_back(new Clickable(cancelPruningRect, 4, "Cancel"));
 
     Rect waterTreeButtonRect(WINDOW_WIDTH-buttonWidth, 0, buttonWidth, 100);
@@ -75,7 +75,7 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     buttonList.push_back(new Clickable(fertiliseTreeRect, 6, "Fertilise tree"));
 
     Rect pruneBranchRect(WINDOW_WIDTH-buttonWidth, 200, buttonWidth, 100);
-    buttonList.push_back(new Clickable(pruneBranchRect, 7, "Prune branch"));
+    buttonList.push_back(new Clickable(pruneBranchRect, 7, "Trim Hedge"));
 
     Rect growTreeRect(WINDOW_WIDTH-buttonWidth, 300, buttonWidth, 100);
     buttonList.push_back(new Clickable(growTreeRect, 8, "Grow tree"));
@@ -120,7 +120,7 @@ Game::~Game(){
 void Game::drawScreen(){
     //Clears what was previously on the screen by drawing a vertical gradient
     // Define start and end colors for the gradient (Sky Blue to a deeper Steel Blue)
-    Scalar startColor = CV_RGB(135, 206, 250); // Light Sky Blue (Note: CV_RGB uses BGR order internally, but definition is RGB)
+    Scalar startColor = CV_RGB(135, 206, 250); // Light Sky Blue
     Scalar endColor = CV_RGB(70, 130, 180);   // Steel Blue
 
     int width = screenImg->cols;
@@ -142,31 +142,63 @@ void Game::drawScreen(){
         cv::line(*screenImg, Point(0, y), Point(width - 1, y), CV_RGB(r, g, b), 1);
     }
 
+
     switch(currentState) {
     case MAIN_MENU:
+        // The main menu will now use the default gradient background drawn above.
+        // Removed code for drawing menuBackgroundImage.
+
         { // Block to scope variables for title
             std::string titleText = "Bush trimming simulator";
             int fontFace = cv::FONT_HERSHEY_TRIPLEX;
             double fontScale = 1.2;
-            int thickness = 2;
+            int thickness = 2; // Original thickness
             int baseline = 0;
             cv::Size textSize = cv::getTextSize(titleText, fontFace, fontScale, thickness, &baseline);
             
             // Calculate x-coordinate to center the text
             cv::Point textOrg((WINDOW_WIDTH - textSize.width) / 2, 80); // Y set to 80 pixels from top
 
-            cv::putText(*screenImg, titleText, textOrg, fontFace, fontScale, cv::Scalar(0,0,0), thickness); // Black color
+            // Draw text with a white color and black outline for visibility on potentially varied background
+            cv::putText(*screenImg, titleText, textOrg, fontFace, fontScale, cv::Scalar(0,0,0), thickness + 2); // Outline
+            cv::putText(*screenImg, titleText, textOrg, fontFace, fontScale, cv::Scalar(255,255,255), thickness); // Fill
         }
-        //Draws the play button
+
+        { // Block for project credit text
+            std::string projectText = "OOP Project - Bush Growing Simulator"; // Updated project credit text
+            int projectFontFace = cv::FONT_HERSHEY_SIMPLEX;
+            double projectFontScale = 0.5;
+            int projectThickness = 1;
+            int projectBaseline = 0;
+            cv::Size projectTextSize = cv::getTextSize(projectText, projectFontFace, projectFontScale, projectThickness, &projectBaseline);
+            
+            // Position text in the bottom-right corner
+            cv::Point projectTextOrg(WINDOW_WIDTH - projectTextSize.width - 10, WINDOW_HEIGHT - 10); 
+
+            // Draw text with a white color and black outline
+            cv::putText(*screenImg, projectText, projectTextOrg, projectFontFace, projectFontScale, cv::Scalar(0,0,0), projectThickness + 1); // Black outline (thickness 2)
+            cv::putText(*screenImg, projectText, projectTextOrg, projectFontFace, projectFontScale, cv::Scalar(255,255,255), projectThickness); // White fill (thickness 1)
+        }
+
+        //Draws the play button - assuming buttons have their own text color settings or will be updated
+        // For now, let's assume Clickable::draw handles text color. If not, we might need to adjust button drawing.
+        // To make buttons more visible, we can change their background color or add an outline here if needed.
+        // For example, making button backgrounds semi-transparent white:
+        // for(int i = 0; i < 2; ++i) { // Only for Play and Instructions for now
+        //    if (buttonList[i]) {
+        //        buttonList[i]->setBackgroundColor(cv::Scalar(255, 255, 255, 128)); // Example: Semi-transparent white
+        //    }
+        // }
         buttonList[0]->draw(screenImg);
-        //Draws the instruction menu button
         buttonList[1]->draw(screenImg);
         //Draws the load game button
         if (loadGameButton) { // Ensure it's initialized
+            // loadGameButton->setBackgroundColor(cv::Scalar(255, 255, 255, 128)); // Optional: match other buttons
             loadGameButton->draw(screenImg);
         }
         //Draws the berries button
         if (berriesMenuButton) { // Ensure it's initialized
+            // berriesMenuButton->setBackgroundColor(cv::Scalar(255, 255, 255, 128)); // Optional: match other buttons
             berriesMenuButton->draw(screenImg);
         }
         break;
@@ -174,24 +206,38 @@ void Game::drawScreen(){
         //Draws the back button
         buttonList[2]->draw(screenImg);
 
-        { // Start new scope block
+        { // Scope for title
+            std::string titleText = "Instructions";
+            int titleFontFace = cv::FONT_HERSHEY_TRIPLEX;
+            double titleFontScale = 1.0;
+            int titleThickness = 2;
+            int baseline = 0;
+            cv::Size textSize = cv::getTextSize(titleText, titleFontFace, titleFontScale, titleThickness, &baseline);
+            cv::Point titleOrg((WINDOW_WIDTH - textSize.width) / 2, 80); // Y set to 80
+            cv::putText(*screenImg, titleText, titleOrg, titleFontFace, titleFontScale, cv::Scalar(0,0,0), titleThickness);
+        }
+
+        { // Start new scope block for instruction lines
             //Explains the instructions
             int instructionFont = cv::FONT_HERSHEY_DUPLEX; // Changed font
             double instructionFontScale = 0.8; // Slightly reduced scale for DUPLEX to fit well
             int instructionThickness = 1;      // Adjusted thickness for DUPLEX
+            
+            int instructionXPos = WINDOW_WIDTH/2-300;
+            int instructionStartY = 180; // Shifted down by 30px from original 150px
+            int lineSpacing = 50;
 
-            putText(*screenImg, "Water and fertilise your tree so it grows", Point(WINDOW_WIDTH/2-300, 150), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-            putText(*screenImg, "big and tall. Prune branches that you", Point(WINDOW_WIDTH/2-300, 200), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-            putText(*screenImg, "want to remove and reverse your previous", Point(WINDOW_WIDTH/2-300, 250), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-            putText(*screenImg, "actions if you make a mistake or don't", Point(WINDOW_WIDTH/2-300, 300), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-            putText(*screenImg, "like how the tree has grown. You get 2L", Point(WINDOW_WIDTH/2-300, 350), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-            putText(*screenImg, "water and 1kg fertiliser free every time", Point(WINDOW_WIDTH/2-300, 400), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
-            putText(*screenImg, "you let your tree grow. Press ESC to quit", Point(WINDOW_WIDTH/2-300, 450), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "Water and fertilise your tree so it grows", Point(instructionXPos, instructionStartY), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "big and tall. Prune branches that you", Point(instructionXPos, instructionStartY + lineSpacing), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "want to remove and reverse your previous", Point(instructionXPos, instructionStartY + 2 * lineSpacing), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "actions if you make a mistake or don't", Point(instructionXPos, instructionStartY + 3 * lineSpacing), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "like how the tree has grown. You get 2L", Point(instructionXPos, instructionStartY + 4 * lineSpacing), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "water and 1kg fertiliser free every time", Point(instructionXPos, instructionStartY + 5 * lineSpacing), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
+            putText(*screenImg, "you let your tree grow. Press ESC to quit", Point(instructionXPos, instructionStartY + 6 * lineSpacing), instructionFont, instructionFontScale, Scalar(0, 0, 0), instructionThickness);
         } // End new scope block
         break;
     case PRUNING_ACTION:
-        //Draws the cancel pruning button
-        buttonList[3]->draw(screenImg);
+        // Cancel pruning button (buttonList[3]) is now drawn in IN_GAME case if currentState == PRUNING_ACTION
         // Draw Save Game button in Pruning Action state
         if (saveGameButton) { // Ensure it's initialized
             saveGameButton->draw(screenImg);
@@ -242,6 +288,11 @@ void Game::drawScreen(){
             
             cv::putText(*screenImg, waterText, cv::Point(10, WINDOW_HEIGHT - 35), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
             cv::putText(*screenImg, fertText, cv::Point(10, WINDOW_HEIGHT - 15), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0,0,0), 2);
+        }
+        
+        // If in PRUNING_ACTION state, draw the Cancel button on top of everything else drawn in IN_GAME.
+        if (currentState == PRUNING_ACTION) {
+            buttonList[3]->draw(screenImg); // Draws the "Cancel" button for pruning
         }
         break;
 

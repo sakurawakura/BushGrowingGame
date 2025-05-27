@@ -97,26 +97,52 @@ void Tree::addBranches(vector<Branch*> newBranches){
     updateMaxConstraints();
 }
 
+/**
+ * @brief Simulates the growth of the tree for one turn.
+ * This includes managing branch sustenance (incrementing neglect counters, checking for death),
+ * calculating overall growth based on available resources, applying growth to each branch,
+ * potentially spawning new branches, and spawning fruits.
+ * @param waterConsumed Output parameter: amount of water consumed by the tree this turn.
+ * @param nutrientsConsumed Output parameter: amount of nutrients consumed by the tree this turn.
+ * @param widthIncreases Output parameter: list of width increases for each branch.
+ * @param lengthIncreases Output parameter: list of length increases for each branch.
+ * @param branchesGrown Output parameter: list of indices for newly grown branches.
+ */
 void Tree::grow(float &waterConsumed, float &nutrientsConsumed, 
     vector<float> &widthIncreases, vector<float> &lengthIncreases, vector<int> &branchesGrown){
 
-    std::cout << "DEBUG Tree::grow: START - waterLevel=" << waterLevel << ", nutrientLevel=" << nutrientLevel << ", maxWater=" << maxWater << ", maxNutrients=" << maxNutrients << std::endl;
+    // === Branch Sustenance and Lifecycle Management ===
+    // Iterate through all branches to update their sustenance status before growth.
+    for (Branch* branch : branchList) {
+        if (branch->getIsAlive()) { // Only process living branches.
+            // Increment counters for turns without water and nutrients.
+            branch->incrementTurnsWithoutWater();
+            branch->incrementTurnsWithoutNutrients();
 
-    //Finds the growth amount of each branch based on the amount of water and nutrients
+            // Check if the branch should die due to neglect.
+            if (branch->getTurnsWithoutWater() > Branch::MAX_TURNS_WITHOUT_SUSTENANCE ||
+                branch->getTurnsWithoutNutrients() > Branch::MAX_TURNS_WITHOUT_SUSTENANCE) {
+                branch->setIsAlive(false); // Mark the branch as dead.
+                // std::cout << "Branch " << branch->getIndex() << " has died due to neglect." << std::endl; // Optional debug message.
+            }
+        }
+    }
+
+    // === Growth Calculation ===
+    // Determine overall growth amount based on the minimum of available water and nutrients.
     float growthAmount = min(waterLevel, nutrientLevel);
     if (growthAmount < 0.0f) {
         growthAmount = 0.0f;
     }
-    std::cout << "DEBUG Tree::grow: growthAmount (min(water,nutrient))=" << growthAmount << std::endl;
-    float branchGrowthAmount = BRANCH_GROWTH_AMOUNT*growthAmount/branchList.size();
-    std::cout << "DEBUG Tree::grow: branchGrowthAmount (for each branch)=" << branchGrowthAmount << std::endl;
+    float branchGrowthAmount = 0;
+    if (!branchList.empty()) { // Avoid division by zero if branchList is empty
+        branchGrowthAmount = BRANCH_GROWTH_AMOUNT * growthAmount / branchList.size();
+    }
 
 
     //Removes water and nutrients based on the size of the tree
-    std::cout << "DEBUG Tree::grow: Deduction - water=" << (maxWater*0.05) << ", nutrients=" << (maxNutrients*0.05) << std::endl;
     waterLevel-= maxWater*0.05;
     nutrientLevel-= maxNutrients*0.05;
-    std::cout << "DEBUG Tree::grow: AFTER DEDUCTION - waterLevel=" << waterLevel << ", nutrientLevel=" << nutrientLevel << std::endl;
 
     //Updates output variables based on the amount of water and nutrients consumed
     waterConsumed = maxWater*0.05;
@@ -170,8 +196,6 @@ void Tree::grow(float &waterConsumed, float &nutrientsConsumed,
             float fruitRadius = 5.0f;
 
             fruitsList.emplace_back(cv::Point2f(fruitX_tip, fruitY_tip), spawnedFruitColor, fruitRadius, spawnedFruitType, nextFruitId++, branchList[branchIndex]->getIndex());
-            // Optional: Add a std::cout debug message here if you want to confirm fruit spawning in console
-            // std::cout << "DEBUG Tree::grow: Spawned fruit ID " << (nextFruitId-1) << " of type " << static_cast<int>(spawnedFruitType) << " on branch " << branchList[branchIndex]->getIndex() << std::endl;
         }
 
         //Adds a new branch if the tree has the required nutrients and water
@@ -204,6 +228,30 @@ void Tree::grow(float &waterConsumed, float &nutrientsConsumed,
     //Updates the max water and nutrients of the tree
     updateMaxConstraints();
 
+}
+
+/**
+ * @brief Resets the 'turnsWithoutWater' counter for all living branches in the tree.
+ * This is typically called after a watering action.
+ */
+void Tree::resetAllBranchWaterCounters() {
+    for (Branch* branch : branchList) {
+        if (branch->getIsAlive()) { // Only affect living branches.
+            branch->resetTurnsWithoutWater(); 
+        }
+    }
+}
+
+/**
+ * @brief Resets the 'turnsWithoutNutrients' counter for all living branches in the tree.
+ * This is typically called after a fertilising action.
+ */
+void Tree::resetAllBranchNutrientCounters() {
+    for (Branch* branch : branchList) {
+        if (branch->getIsAlive()) { // Only affect living branches.
+            branch->resetTurnsWithoutNutrients();
+        }
+    }
 }
 
 void Tree::pruneBranch(int branchIndex, vector<Branch*> &removedBranches) {
@@ -297,27 +345,19 @@ int Tree::findBranch(int index){
         if(branchList[i]->getIndex() == index) return i;
     }
 
-   // cout << "Error in Tree.findBranch(), branch with that index not found" << endl;
     return -1;
 }
 
 void Tree::updateMaxConstraints(){
-    float previousMaxWater = 0;
-    float previousMaxNutrients = 0;
-
-
     float totalArea = 0;
 
     for(int i =0; i < branchList.size(); i++){
         totalArea += branchList[i]->getSize();
     }
-    std::cout << "DEBUG Tree::updateMaxConstraints: totalArea=" << totalArea << std::endl;
 
     //Updates the maximum water and nutrients that can be stored in the tree
     maxWater = totalArea/50;
     maxNutrients = totalArea/50;
-    std::cout << "DEBUG Tree::updateMaxConstraints: new maxWater=" << maxWater << ", new maxNutrients=" << maxNutrients << std::endl;
-
 }
 
 void Tree::updateBranchPos(){
@@ -357,7 +397,6 @@ bool Tree::collectFruitAtPoint(const cv::Point& clickPoint, FruitType& outCollec
                 fruit.collected = true; // Mark as collected
                 outCollectedFruitType = fruit.type;
                 outCollectedFruitId = fruit.id;
-                // std::cout << "DEBUG Tree::collectFruitAtPoint: Fruit ID " << fruit.id << " collected!" << std::endl; // Optional debug
                 return true; // Fruit collected
             }
         }
@@ -487,22 +526,12 @@ Tree* Tree::loadFromStream(std::istream& in, int windowWidth, int windowHeight) 
         
         loadedTree = new Tree(p_waterLevel, p_nutrientLevel, trunk); // trunk is now owned by loadedTree
 
-        // The Tree constructor adds the trunk to its internal branchList.
-        // We need to replace this with our full list of loaded branches.
-        // First, clear the branchList that the constructor created (which contains only the trunk it copied).
-        for(Branch* b_in_constructor_list : loadedTree->branchList) {
-             // This is tricky: the trunk passed to constructor is now in branchList.
-             // If we delete it here, and then add it again from loadedBranches, we might have issues.
-             // The trunk passed to constructor IS the first element of loadedTree->branchList.
-             // We want to replace the entire branchList.
-        }
-        // Delete the single trunk branch that was added by the Tree constructor.
-        // The 'trunk' variable we created is a copy of loadedBranches[0].
-        // The Tree constructor takes this 'trunk' and its internal branchList[0] points to it.
-        delete loadedTree->branchList[0]; // Delete the trunk that the constructor put in its list
+        // The Tree constructor created a branchList containing a copy of the trunk.
+        // We need to replace this with our fully loaded branchList.
+        delete loadedTree->branchList[0]; // Delete the trunk copy made by the constructor
         loadedTree->branchList.clear();   // Clear the list
 
-        // Now, transfer ownership of all loaded branches (including the original loadedBranches[0]) to the tree.
+        // Transfer ownership of all loaded branches to the tree.
         for (Branch* b_ptr : loadedBranches) {
             loadedTree->branchList.push_back(b_ptr);
         }
@@ -511,29 +540,12 @@ Tree* Tree::loadFromStream(std::istream& in, int windowWidth, int windowHeight) 
     } else { // p_num_branches was 0 or loading failed to get any branches
          std::cout << "No branches in save file or failed to load branches. Creating default tree." << std::endl;
          Branch* defaultTrunk = new Branch(0, -1, 0.0f, 50.0f, 10.0f,  windowWidth/ 2.0f, (float)windowHeight); 
-         loadedTree = new Tree(10.0f, 10.0f, defaultTrunk); // Default resources
-         // If p_waterLevel, p_nutrientLevel were 0 because file was minimal (e.g. just "num_branches 0"), use defaults.
-         // The initial values in the constructor above will be used if p_waterLevel/p_nutrientLevel were validly 0 from file.
-         // If the file indicated 0 branches, the p_waterLevel and p_nutrientLevel from file are respected.
-         if (p_num_branches == 0 && p_waterLevel == 0.0f && p_nutrientLevel == 0.0f) {
-             // If the file specifically had 0 for these, it's fine. If it was a minimal file,
-             // the constructor defaults are reasonable. The code above already uses p_waterLevel, p_nutrientLevel.
-             // This special block for 0,0,0 resources might be redundant if constructor uses defaults.
-             // The constructor Tree(10,10,defaultTrunk) already sets these.
-             // If values from file were 0,0,0 then loadedTree will have those.
-         }
-         // The loadedTree created with defaultTrunk already has water/nutrient levels (10,10).
-         // If the file specified 0 branches but had specific water/nutrient levels, those should be used.
-         loadedTree->waterLevel = p_waterLevel;
-         loadedTree->nutrientLevel = p_nutrientLevel;
+         loadedTree = new Tree(p_waterLevel, p_nutrientLevel, defaultTrunk); // Use water/nutrient from file, or defaults if file was minimal
     }
     
     loadedTree->maxIndex = p_maxIndex;
-    // Fruit loading should happen before final updates if they depend on fruit data,
-    // but after loadedTree and its branchList are confirmed to be valid.
-    // For now, assuming updateMaxConstraints and updateBranchPos don't depend on fruitsList.
 
-    std::string keyword_fruit; // Use a different keyword variable to avoid conflicts if any outer scope uses 'keyword'
+    std::string keyword_fruit; 
     // Load next_fruit_id
     if (!(in >> keyword_fruit >> loadedTree->nextFruitId) || keyword_fruit != "next_fruit_id") {
         std::cerr << "Error: Failed to read next_fruit_id or keyword mismatch. Defaulting to 0." << std::endl;
@@ -579,4 +591,20 @@ Tree* Tree::loadFromStream(std::istream& in, int windowWidth, int windowHeight) 
     loadedTree->updateBranchPos(); 
 
     return loadedTree;
+}
+
+void Tree::resetAllBranchWaterCounters() {
+    for (Branch* branch : branchList) {
+        if (branch->getIsAlive()) { // Only reset for living branches
+            branch->resetTurnsWithoutWater(); // New method in Branch (to be implemented)
+        }
+    }
+}
+
+void Tree::resetAllBranchNutrientCounters() {
+    for (Branch* branch : branchList) {
+        if (branch->getIsAlive()) { // Only reset for living branches
+            branch->resetTurnsWithoutNutrients(); // New method in Branch (to be implemented)
+        }
+    }
 }
