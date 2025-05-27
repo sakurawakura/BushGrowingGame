@@ -33,7 +33,8 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     //Creates the timeline
     gameTimeline = new Timeline();
 
-    int buttonWidth = 250; // Used for other buttons, main menu buttons are 200 wide
+    int buttonWidth = 200; // Changed from 250 for action buttons
+    int actionButtonHeight = 60; // New height for action buttons
 
     // Main Menu Buttons - Adjusted Layout
     int mainMenuButtonWidth = 200;
@@ -68,20 +69,21 @@ Game::Game(int windowWidth, int windowHeight) : currentState(MAIN_MENU){
     Rect cancelPruningRect(10, WINDOW_HEIGHT-60, 150, 50); // Modified dimensions and position
     buttonList.push_back(new Clickable(cancelPruningRect, 4, "Cancel"));
 
-    Rect waterTreeButtonRect(WINDOW_WIDTH-buttonWidth, 0, buttonWidth, 100);
-    buttonList.push_back(new Clickable(waterTreeButtonRect, 5, "Water tree"));
+    // Action Buttons - Resized and Relabeled
+    Rect waterBushRect(WINDOW_WIDTH-buttonWidth, 0 * actionButtonHeight, buttonWidth, actionButtonHeight);
+    buttonList.push_back(new Clickable(waterBushRect, 5, "Water Bush"));
 
-    Rect fertiliseTreeRect(WINDOW_WIDTH-buttonWidth, 100, buttonWidth, 100);
-    buttonList.push_back(new Clickable(fertiliseTreeRect, 6, "Fertilise tree"));
+    Rect fertiliseBushRect(WINDOW_WIDTH-buttonWidth, 1 * actionButtonHeight, buttonWidth, actionButtonHeight);
+    buttonList.push_back(new Clickable(fertiliseBushRect, 6, "Fertilise Bush"));
 
-    Rect pruneBranchRect(WINDOW_WIDTH-buttonWidth, 200, buttonWidth, 100);
-    buttonList.push_back(new Clickable(pruneBranchRect, 7, "Trim Hedge"));
+    Rect trimHedgeRect(WINDOW_WIDTH-buttonWidth, 2 * actionButtonHeight, buttonWidth, actionButtonHeight);
+    buttonList.push_back(new Clickable(trimHedgeRect, 7, "Trim Hedge"));
 
-    Rect growTreeRect(WINDOW_WIDTH-buttonWidth, 300, buttonWidth, 100);
-    buttonList.push_back(new Clickable(growTreeRect, 8, "Grow tree"));
+    Rect growBushRect(WINDOW_WIDTH-buttonWidth, 3 * actionButtonHeight, buttonWidth, actionButtonHeight);
+    buttonList.push_back(new Clickable(growBushRect, 8, "Grow Bush"));
 
-    Rect reverseActionRect(WINDOW_WIDTH-buttonWidth, 400, buttonWidth, 100);
-    buttonList.push_back(new Clickable(reverseActionRect, 9, "Reverse action"));
+    Rect undoActionRect(WINDOW_WIDTH-buttonWidth, 4 * actionButtonHeight, buttonWidth, actionButtonHeight);
+    buttonList.push_back(new Clickable(undoActionRect, 9, "Undo Action"));
 
     // Instantiate Save Game button
     Rect saveGameButtonRect(140, 10, 120, 50); // Repositioned next to Back button
@@ -167,7 +169,7 @@ void Game::drawScreen(){
         { // Block for project credit text
             std::string projectText = "OOP Project - Bush Growing Simulator"; // Updated project credit text
             int projectFontFace = cv::FONT_HERSHEY_SIMPLEX;
-            double projectFontScale = 0.5;
+            double projectFontScale = 0.4; // Changed font scale from 0.5 to 0.4
             int projectThickness = 1;
             int projectBaseline = 0;
             cv::Size projectTextSize = cv::getTextSize(projectText, projectFontFace, projectFontScale, projectThickness, &projectBaseline);
