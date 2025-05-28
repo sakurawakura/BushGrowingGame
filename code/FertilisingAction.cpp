@@ -1,25 +1,26 @@
 #include "FertilisingAction.h"
 
-//Water added to the tree is equal to the fertiliser added to the tree
+//Construct fert object, init with the player.
 FertilisingAction::FertilisingAction(Player* currentPlayer, Tree* currentTree, float kilogramsToAdd) :
     WateringAction(currentPlayer, currentTree, kilogramsToAdd), nutrientsAdded(kilogramsToAdd){};
 
 bool FertilisingAction::performAction(){
-    if(playerToModify->useFertiliser(nutrientsAdded)){ // Attempt to use fertilizer from player
+    if(playerToModify->useFertiliser(nutrientsAdded)){ // use from player
         this->nutrientsAbsorbed = treeToModify->addNutrients(this->nutrientsAdded); // Add to tree
-        treeToModify->resetAllBranchNutrientCounters(); // Reset nutrient counters for all living branches
-        return true; // Successful if player had fertilizer
+        treeToModify->resetAllBranchNutrientCounters(); // reset for all branches
+        return true; // true if has fertiliser
     } else {
-        // Player didn't have enough fertilizer. Message is printed by useFertiliser.
+        // didnt have enough fert
         this->nutrientsAbsorbed = 0;
         return false; // Failed
     }
 };
 
 void FertilisingAction::reverseAction(){
-    treeToModify->removeNutrients(this->nutrientsAbsorbed); // Remove only what was absorbed
-    playerToModify->addFertiliser(this->nutrientsAdded);    // Refund the amount initially intended
+    treeToModify->removeNutrients(this->nutrientsAbsorbed); // remove only amount absorbed
+    playerToModify->addFertiliser(this->nutrientsAdded);    // return the amount if undo
 };
+
 
 void FertilisingAction::printData(){
     cout << "Fertilising action object" << endl;

@@ -53,8 +53,6 @@ int main() {
     // Indicate end of test
     std::cout << "Player test complete \n" << std::endl;
 
-
-
     //Test using branch
     // Initialize a branch with specific parameters
     Branch branch(0, -1, 45.0, 100.0, 20.0, 50.0, 50.0);

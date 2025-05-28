@@ -11,10 +11,9 @@ int main(void) {
     Game game = Game(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     //Game loop runs until escape key is pressed
-    // ASCI value for ESC key is 27
     int keyPressed = -1;
-    while((keyPressed = cv::pollKey()) != 27){ // Capture key, then check for ESC
-        game.handleInputs(keyPressed); // Pass the pressed key (or -1 if none)
+    while((keyPressed = cv::pollKey()) != 27){ // Capture key, then check for ESC (27 aCSI)
+        game.handleInputs(keyPressed); // Pass the pressed key
         game.drawScreen();
     };
 

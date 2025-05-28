@@ -10,32 +10,32 @@ using namespace cv;
 class Clickable {
 
 public:
-    // Member to track pressed state, mutable to allow modification in const draw() method
+    // Member to track pressed state??
     mutable bool isPressed; 
 
     //pass though the features needed for clickable class
     Clickable(Rect rect, int id, string text) : rect_(rect), id_(id), clicked_(false), buttonText_(text), isPressed(false) {}
 
-    //is the cursor over the clickable area
+    //iiis the cursor over the clickable area?
     bool contains(Point2f pt) const { return rect_.contains(pt); }
 
-    // Did the user click it
+    // did user click itt
     void setClicked(bool clicked) { clicked_ = clicked; }
 
     // if its clicked return as clicked_
     bool isClicked() const { return clicked_; }
 
-    // an id feature to keeptrack of different buttons
+    // ids to keep track of buttons
     int getId() const { return id_; }
 
-    // draws the button with enhanced styling
+// ------------------- visual implementation
+
+    // draw button (CHATGPT FOR STYLING)
     void draw(Mat* img) const { 
-        // Original Styling choices
         Scalar originalBgColor = CV_RGB(220, 220, 220);    // Light grey
         Scalar originalBorderColor = CV_RGB(150, 150, 150); // Medium grey for border
         int originalBorderThickness = 2;
         
-        // Pressed Styling choices
         Scalar pressedBgColor = CV_RGB(200, 200, 200);      // Slightly darker grey
         Scalar pressedBorderColor = CV_RGB(130, 130, 130);   // Slightly darker border
         int pressedBorderThickness = 3; // Thicker border

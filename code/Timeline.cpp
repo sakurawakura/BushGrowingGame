@@ -10,7 +10,7 @@ Timeline::~Timeline(){
 }
 
 void Timeline::performAction(Action* actionToPerform){
-    //Adds the action to the list
+    //Add the action to the list
     listOfActions.push_back(actionToPerform);
     //Performs the action immediately
     actionToPerform->performAction();
@@ -18,14 +18,14 @@ void Timeline::performAction(Action* actionToPerform){
 
 void Timeline::reverseAction(){
     if(listOfActions.size()>0){
-        //Reverses the last action that was taken
+        //Reverses the last action 
         listOfActions.back()->reverseAction();
         //Deallocates the memory
         delete listOfActions.back();
-        //Deletes the pointer from the vector
+        //Delete the pointer from the vector
         listOfActions.pop_back();
     }else{
-        cout << "You can't travel back before the beginning of time" << endl;
+        cout << "You cant travel back before the beginning of time lol" << endl;
     }
 }
 

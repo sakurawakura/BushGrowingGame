@@ -2,7 +2,7 @@
 #define PLAYER_H
 
 #include "Printable.h"
-#include <iostream> // Required for std::ostream and std::istream
+#include <iostream> // for std::ostream and std::istream
 
 using namespace std;
 
@@ -26,7 +26,6 @@ public:
     // Getters for current supplies
     float getWaterSupply();
     float getFertiliserSupply();
-
     void printData();
 
     // Text-based save/load

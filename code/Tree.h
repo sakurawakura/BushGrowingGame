@@ -23,13 +23,13 @@ class Tree : public Printable{
         void removeWater(float litres);
         void removeNutrients(float kilograms);
 
-        //removes a branch from the tree, along with all of its child branches
+        //removes a branch from the bush, along with all of its child branches
         void pruneBranch(int branchIndex, vector<Branch*> &removedBranches);
 
         //Adds branches to the list
         void addBranches(vector<Branch*> newBranches);
 
-        //Increases the size of branches and possibly adds new branches
+        //Increases the size of branches and adds branches
         void grow(float &waterConsumed, float &nutrientsConsumed, 
         vector<float> &widthIncreases, vector<float> &lengthIncreases, vector<int> &branchesGrown);
 
@@ -39,14 +39,13 @@ class Tree : public Printable{
         //Changes the dimensions of the branhes
         void modifyBranches(vector<float> widthIncreases, vector<float> lengthIncreases);
 
-
-        //Finds the position of a branch with a given index in the branch list
+        //Finds the position of a branch
         int findBranch(int index);
 
-        //Updates the maximum water and nutrients that the tree can store
+        //Updates maximum water and nutrients that can be storeed
         void updateMaxConstraints();
 
-        //Updates the positions of the branches if necessary
+        //positions of the branches updating
         void updateBranchPos();
 
         void draw(Mat* img);
@@ -55,16 +54,16 @@ class Tree : public Printable{
 
         void printData();
 
-        // Text-based save/load
+        // save/load
         void saveToStream(std::ostream& out) const;
         static Tree* loadFromStream(std::istream& in, int windowWidth, int windowHeight);
 
         const std::vector<Fruit>& getFruitsList() const; // Getter for fruitsList
         bool collectFruitAtPoint(const cv::Point& clickPoint, FruitType& outCollectedFruitType, int& outCollectedFruitId);
 
-        // Methods related to branch sustenance
-        void resetAllBranchWaterCounters();     ///< Resets the 'turnsWithoutWater' counter for all living branches.
-        void resetAllBranchNutrientCounters();  ///< Resets the 'turnsWithoutNutrients' counter for all living branches.
+        // branch sustenance
+        void resetAllBranchWaterCounters();     // Resetthe 'turnsWithoutWater' 
+        void resetAllBranchNutrientCounters();  // Reset the 'turnsWithoutNutrients' 
 
     private:
         vector<Branch*> branchList;

@@ -21,11 +21,11 @@ class GrowingAction : public Action, public Printable{
         float waterConsumed;
         float nutrientsConsumed;
 
-        //Stores the increases in width and height of each branch
+        //Stores the increases
         vector<float> branchWidthIncreases;
         vector<float> branchLengthIncreases;
 
-        //Stores the indices of every new branch that was added
+        //Stores the indices 
         vector<int> newBranchIndices;
 };
 

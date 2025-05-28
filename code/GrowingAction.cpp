@@ -3,12 +3,12 @@
 GrowingAction::GrowingAction(Player* currentPlayer, Tree* currentTree) : treeToModify(currentTree), playerToModify(currentPlayer) {};
 
 bool GrowingAction::performAction() {
-    //Grows the tree and stores the changes in the corrresponding variables
+    //Grows the tree and stores the changes
     treeToModify->grow(waterConsumed, nutrientsConsumed, 
     branchWidthIncreases, branchLengthIncreases, newBranchIndices);
 
-    playerToModify->addFertiliser(3); // Changed from 1 to 3
-    playerToModify->addWater(3);    // Changed from 2 to 3
+    playerToModify->addFertiliser(3); 
+    playerToModify->addWater(3);    
 
     return true;
 };
@@ -24,6 +24,7 @@ void GrowingAction::reverseAction() {
     
 };
 
+// Testing in console 
 void GrowingAction::printData() {
     cout << "Growing action object" << endl;
     cout << "Water conumed: " << waterConsumed << endl;
