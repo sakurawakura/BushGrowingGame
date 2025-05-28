@@ -1,142 +1,114 @@
 #include "Branch.h"
-#include <string>   // For std::string in loadFromStream
-#include <vector>   // For std::vector in loadFromStream
-#include <sstream>  // For std::istringstream in loadFromStream (robustness)
-#include <cmath>    // For M_PI, sin, cos
-#include <algorithm> // For std::min
-#include <cstdlib>   // For rand, RAND_MAX
+#include <string>   // loading from a string
+#include <vector>   
+#include <sstream>  
+#include <cmath>    // for branch calcuslations
+#include <algorithm> 
+#include <cstdlib>   
 
-/**
- * @brief Constructs a new Branch object with specified geometric properties and parent/child relationships.
- * Initializes sustenance counters to zero and sets the branch as alive with leaves.
- * @param branchIndex Unique index of this branch.
- * @param parentBranchIndex Index of the parent branch (-1 if trunk).
- * @param initialAngle Initial angle of the branch relative to its parent or vertical.
- * @param initialLength Initial length of the branch.
- * @param initialWidth Initial width of the branch.
- * @param initialXPos X-coordinate of the base of the branch.
- * @param initialYPos Y-coordinate of the base of the branch.
- */
-Branch::Branch(int branchIndex, int parentBranchIndex, float initialAngle, float initialLength, 
-float initialWidth, float initialXPos, float initialYPos): index(branchIndex), parentIndex(parentBranchIndex), age(0),
-                                                            turnsWithoutWater(0), turnsWithoutNutrients(0), isAlive(true) {
-    hasLeaves = true; // New branches start with the potential to have leaves.
-    leafPositions.clear(); // Initialize with no specific leaf positions yet.
-    cv::Size2f size = cv::Size2f(initialWidth, initialLength); // Use cv::Size2f for float precision
+ /** Dictionary
+  * 
+  *  branchIndex - unique index of this branch
+  *  parentBranchIndex - index of parent branch 
+  *  initialAngle - angle relative to its parent
+  *  initialLength - initial lenght
+  *  initialWidth - same
+  *  initialXPos - X coord
+  *  initialYPos - Y coods
+  * 
+  * 
+  *  
+  * */ 
 
-    //Finds the position of the centre of the branch based on the given position of the base of the branch
+  // Starting up with a new branch... includes all of the 
+Branch::Branch(int branchIndex, int parentBranchIndex, float initialAngle, float initialLength, float initialWidth, float initialXPos, float initialYPos): index(branchIndex), parentIndex(parentBranchIndex), age(0), turnsWithoutWater(0), turnsWithoutNutrients(0), isAlive(true) 
+{
+    // generating branch leaves
+    hasLeaves = true; 
+    leafPositions.clear(); 
+    cv::Size2f size = cv::Size2f(initialWidth, initialLength); 
+
+    //finds centr of branch using base  (CHATGPT)
     float xPos = initialXPos+0.5*initialLength*sin(initialAngle * (M_PI / 180));
     float yPos = initialYPos-0.5*initialLength*cos(initialAngle * (M_PI / 180));
 
-    Point centre = Point(xPos, yPos);
+    Point centre = Point(xPos, yPos); //calc-ed center point stored
 
     branchRect = RotatedRect(centre, size, initialAngle);
-    generateLeaves(); // Attempt to generate initial set of leaves.
+    generateLeaves(); // gengerates the small greeen leaves
 }
 
-/**
- * @brief Default constructor for Branch. Creates an invalid/uninitialized branch.
- * All initialization, including for new members, is handled by the delegated main constructor.
- */
+// default const for branch
 Branch::Branch() : Branch(-1, -1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f) {
-    // All initialization is handled by the delegated constructor.
 };
-
 
 float Branch::getAngle(){
     return branchRect.angle;
 }
-
 void Branch::getTipPos(float &xPosition, float &yPosition) {
-    //Finds position of tip using trigonometry
+    // Find the tips of branch trig (CHATGPT)
     xPosition = branchRect.center.x+0.5*branchRect.size.height*sin(branchRect.angle * (M_PI / 180));
     yPosition = branchRect.center.y-0.5*branchRect.size.height*cos(branchRect.angle * (M_PI / 180));
 }
 
-// --- Sustenance and Lifecycle Methods ---
-/**
- * @brief Increments the counter for turns the branch has gone without water, if alive.
- */
+// ----- life of bush
+
+// increment counter to keep track of truns without water and fertliser
 void Branch::incrementTurnsWithoutWater() {
     if (isAlive) {
         turnsWithoutWater++;
     }
 }
 
-/**
- * @brief Increments the counter for turns the branch has gone without nutrients, if alive.
- */
 void Branch::incrementTurnsWithoutNutrients() {
     if (isAlive) {
         turnsWithoutNutrients++;
     }
 }
 
-/**
- * @brief Gets the current count of consecutive turns the branch has been without water.
- * @return int Number of turns without water.
- */
+// checks how many turns since last supplied 
 int Branch::getTurnsWithoutWater() const {
     return turnsWithoutWater;
 }
 
-/**
- * @brief Gets the current count of consecutive turns the branch has been without nutrients.
- * @return int Number of turns without nutrients.
- */
 int Branch::getTurnsWithoutNutrients() const {
     return turnsWithoutNutrients;
 }
 
-/**
- * @brief Resets the turns without water counter to zero.
- * Typically called when the branch receives water.
- */
+// resets when bush gets watered or fertilsier
 void Branch::resetTurnsWithoutWater() {
     turnsWithoutWater = 0;
 }
 
-/**
- * @brief Resets the turns without nutrients counter to zero.
- * Typically called when the branch receives nutrients.
- */
 void Branch::resetTurnsWithoutNutrients() {
     turnsWithoutNutrients = 0;
 }
 
-/**
- * @brief Sets the alive status of the branch.
- * If the branch is set to not alive, it also ensures it has no leaves.
- * @param aliveStatus The new alive status (true if alive, false if dead).
- */
+// sets alive status of branch
 void Branch::setIsAlive(bool aliveStatus) {
     isAlive = aliveStatus;
     if (!isAlive) {
-        hasLeaves = false; // Dead branches should not have leaves.
-        leafPositions.clear(); // Clear any existing leaf positions for a dead branch.
+        hasLeaves = false; // if not alive no leaves
+        leafPositions.clear(); 
     }
 }
-// --- End Sustenance and Lifecycle Methods ---
 
-/**
- * @brief Generates leaf positions for the branch.
- * Leaves are only generated if the branch is alive, currently flagged to have leaves,
- * and has not reached its maximum leaf capacity. The number of leaves added
- * can depend on the branch's age.
- */
+
+// leaf generation method
 void Branch::generateLeaves() {
-    if (!isAlive) { // If branch is not alive, clear existing leaves and don't generate new ones.
+    if (!isAlive) { // if dead, no leafs and clear new ones
         leafPositions.clear(); 
-        hasLeaves = false; // Ensure hasLeaves is also false.
+        hasLeaves = false; 
         return;
     }
-    if (!hasLeaves || leafPositions.size() >= MAX_LEAVES_PER_BRANCH) { // If it has no leaves flag or maxed out
+    // make sure its less than max leafs
+    if (!hasLeaves || leafPositions.size() >= MAX_LEAVES_PER_BRANCH) { 
         return;
     }
 
-    // Calculate how many new leaves to add
-    // Ensure age is non-negative; if age is 0, (age/2)+1 = 1 leaf.
-    int currentAge = std::max(0, age); // Ensure age is not negative for calculation
+    // calcc how many new leaves to add
+    // make sure age it >0
+    int currentAge = std::max(0, age); 
     int leavesToAddPotential = (currentAge / 2) + 1;
     int newLeavesCount = std::min(MAX_LEAVES_PER_BRANCH - (int)leafPositions.size(), leavesToAddPotential);
 
@@ -184,19 +156,16 @@ int Branch::getParentIndex(){
     return parentIndex;
 }
 
-void Branch::addChild(int childIndex) {
-    //Adds the new index onto the vector
+void Branch::addChild(int childIndex) { // add index to vectr
     childIndices.push_back(childIndex);
 }
 
-bool Branch::removeChild(int childIndex){
-    //Loops through every child of the branch
+bool Branch::removeChild(int childIndex){ // loop for every child of branch
     for(int i = 0; i < childIndices.size(); i ++){
-        //Checks if the current child is the one that is being removed
+        //check if its being removed
         if(childIndices[i] == childIndex){
-            //Erases the element from the vector
+            // delete the elements
             childIndices.erase(childIndices.begin() + i);
-            //Exits function successfully
             return true;
         }
     }
@@ -639,8 +608,7 @@ Branch Branch::loadFromStream(std::istream& in) {
     // Check for any stream errors after trying to read all parts (including optional leaf data)
     if (iss.fail() && !iss.eof()) { // eof is fine if we read everything
          std::cerr << "Error reading branch data for index " << p_idx << " (potentially after leaves). Stream state: " << iss.rdstate() << std::endl;
-         // Returning a default branch or the partially loaded one depends on desired error handling.
-         // For now, return what's loaded, as critical parts might be okay.
+        
     }
 
     return loadedBranch;

@@ -2,6 +2,7 @@
 #define ACTION_H
 
 
+// Controls the undo or perform feature
 class Action {
     public:
         virtual bool performAction() = 0;
